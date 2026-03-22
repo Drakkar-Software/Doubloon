@@ -122,8 +122,10 @@ describe('createX402Middleware', () => {
     expect(typeof middleware).toBe('function');
   });
 
-  it('calls next()', async () => {
-    const mockBridge = {} as any;
+  it('returns 402 when no payment header', async () => {
+    const mockBridge = {
+      createPaymentRequired: vi.fn(() => ({ price: 5, currency: 'USD' })),
+    } as any;
     const middleware = createX402Middleware({
       bridge: mockBridge,
       productId: 'test-product',
@@ -131,8 +133,32 @@ describe('createX402Middleware', () => {
       durationSeconds: 3600,
     });
 
+    const res = { status: vi.fn().mockReturnThis(), json: vi.fn() };
     const next = vi.fn();
-    await middleware({}, {}, next);
+    await middleware({ headers: {} }, res, next);
+    expect(res.status).toHaveBeenCalledWith(402);
+    expect(next).not.toHaveBeenCalled();
+  });
+
+  it('calls next() with valid payment header', async () => {
+    const mockBridge = {
+      verifyAndMint: vi.fn(async () => ({
+        notification: { userWallet: 'wallet123' },
+        instruction: {},
+      })),
+    } as any;
+    const middleware = createX402Middleware({
+      bridge: mockBridge,
+      productId: 'test-product',
+      priceUsd: 5,
+      durationSeconds: 3600,
+    });
+
+    const req = { headers: { 'x-payment': 'valid-payment-data' } } as any;
+    const res = {} as any;
+    const next = vi.fn();
+    await middleware(req, res, next);
     expect(next).toHaveBeenCalledOnce();
+    expect(req.doubloon.entitled).toBe(true);
   });
 });

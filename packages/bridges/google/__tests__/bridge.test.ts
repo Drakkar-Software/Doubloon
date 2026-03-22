@@ -160,7 +160,7 @@ describe('GoogleBridge', () => {
       },
     });
 
-    await expect(bridge.handleNotification(msg)).rejects.toThrow('PRODUCT_NOT_MAPPED');
+    await expect(bridge.handleNotification(msg)).rejects.toMatchObject({ code: 'PRODUCT_NOT_MAPPED' });
   });
 
   it('throws WALLET_NOT_LINKED when wallet cannot be resolved', async () => {
@@ -176,7 +176,7 @@ describe('GoogleBridge', () => {
       walletResolver: noWalletResolver,
     });
 
-    await expect(bridge.handleNotification(makeRTDN())).rejects.toThrow('WALLET_NOT_LINKED');
+    await expect(bridge.handleNotification(makeRTDN())).rejects.toMatchObject({ code: 'WALLET_NOT_LINKED' });
   });
 
   it('throws INVALID_RECEIPT for RTDN without subscription or test notification', async () => {
@@ -193,6 +193,6 @@ describe('GoogleBridge', () => {
       eventTimeMillis: String(Date.now()),
     });
 
-    await expect(bridge.handleNotification(msg)).rejects.toThrow('INVALID_RECEIPT');
+    await expect(bridge.handleNotification(msg)).rejects.toMatchObject({ code: 'INVALID_RECEIPT' });
   });
 });

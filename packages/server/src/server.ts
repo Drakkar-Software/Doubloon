@@ -141,7 +141,8 @@ export function createServer(config: ServerConfig) {
         result.requiresAcknowledgment &&
         config.onAcknowledgmentRequired
       ) {
-        await config.onAcknowledgmentRequired('', new Date(Date.now() + 3 * 86400000));
+        const purchaseToken = result.notification.originalTransactionId || result.notification.id;
+        await config.onAcknowledgmentRequired(purchaseToken, new Date(Date.now() + 3 * 86400000));
       }
 
       // Mark as processed
@@ -202,8 +203,32 @@ export function createServer(config: ServerConfig) {
       }
     } else {
       const revoke = instruction as RevokeInstruction;
-      // Revoke logic - similar retry pattern
-      logger.info('Processing revoke', { productId: revoke.productId, user: revoke.user });
+      try {
+        if (config.chain.writer.revokeEntitlement) {
+          const tx = await config.chain.writer.revokeEntitlement({
+            ...revoke,
+            signer: config.chain.signer.publicKey,
+          });
+          const txSignature = await config.chain.signer.signAndSend(tx);
+          logger.info('Entitlement revoked', {
+            productId: revoke.productId,
+            user: revoke.user,
+            tx: txSignature,
+          });
+          if (config.afterRevoke) await config.afterRevoke(revoke, txSignature);
+        } else {
+          logger.warn('Revoke not supported by chain writer', {
+            productId: revoke.productId,
+            user: revoke.user,
+          });
+        }
+      } catch (err) {
+        logger.error('Revoke failed', {
+          productId: revoke.productId,
+          user: revoke.user,
+          error: err,
+        });
+      }
     }
   }
 

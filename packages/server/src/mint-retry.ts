@@ -1,5 +1,5 @@
 import { DoubloonError } from '@doubloon/core';
-import type { MintInstruction } from '@doubloon/core';
+import type { MintInstruction, RevokeInstruction } from '@doubloon/core';
 
 export interface MintRetryOpts {
   maxRetries?: number;
@@ -16,6 +16,7 @@ export interface MintRetryResult {
 
 export interface ChainWriter {
   mintEntitlement(params: MintInstruction & { signer: string; autoRenew?: boolean }): Promise<unknown>;
+  revokeEntitlement?(params: RevokeInstruction & { signer: string }): Promise<unknown>;
 }
 
 export interface ChainSigner {

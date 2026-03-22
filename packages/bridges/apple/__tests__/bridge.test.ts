@@ -111,7 +111,7 @@ describe('AppleBridge', () => {
       },
     }));
 
-    await expect(bridge.handleNotification({}, body)).rejects.toThrow('PRODUCT_NOT_MAPPED');
+    await expect(bridge.handleNotification({}, body)).rejects.toMatchObject({ code: 'PRODUCT_NOT_MAPPED' });
   });
 
   it('throws INVALID_RECEIPT for malformed body', async () => {
@@ -122,6 +122,6 @@ describe('AppleBridge', () => {
       walletResolver: makeMockWalletResolver(),
     });
 
-    await expect(bridge.handleNotification({}, Buffer.from('not json'))).rejects.toThrow('INVALID_RECEIPT');
+    await expect(bridge.handleNotification({}, Buffer.from('not json'))).rejects.toMatchObject({ code: 'INVALID_RECEIPT' });
   });
 });
