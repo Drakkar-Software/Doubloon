@@ -1,5 +1,5 @@
 import type { MintInstruction, RevokeInstruction, EntitlementSource, Logger } from '@doubloon/core';
-import { nullLogger } from '@doubloon/core';
+import { DoubloonError, nullLogger } from '@doubloon/core';
 
 export interface DoubloonEvmWriterConfig {
   rpcUrl: string;
@@ -16,7 +16,7 @@ function entitlementSourceToU8(source: EntitlementSource): number {
   return map[source];
 }
 
-// TODO: Connect to viem WalletClient for live RPC calls
+/** Requires a configured viem WalletClient for live transactions. */
 export class DoubloonEvmWriter {
   private contractAddress: string;
   private logger: Logger;
@@ -28,7 +28,7 @@ export class DoubloonEvmWriter {
 
   /**
    * Registers a new product on-chain.
-   * Placeholder – returns an empty hash until viem integration is complete.
+   * Requires a configured viem WalletClient.
    */
   async registerProduct(params: {
     productId: string;
@@ -36,33 +36,42 @@ export class DoubloonEvmWriter {
     metadataUri: string;
     defaultDuration: number;
   }): Promise<{ hash: string }> {
-    this.logger.info('Building registerProduct tx (placeholder – no wallet client configured)', { productId: params.productId });
-    return { hash: '' };
+    this.logger.info('Building registerProduct tx', { productId: params.productId });
+    throw new DoubloonError(
+      'RPC_ERROR',
+      'EVM writer requires a configured wallet client. Install viem and use createWalletClient.',
+    );
   }
 
   /**
    * Mints an entitlement for a user.
-   * Placeholder – returns an empty hash until viem integration is complete.
+   * Requires a configured viem WalletClient.
    */
   async mintEntitlement(params: MintInstruction & {
     autoRenew?: boolean;
   }): Promise<{ hash: string }> {
-    this.logger.info('Building mintEntitlement tx (placeholder – no wallet client configured)', {
+    this.logger.info('Building mintEntitlement tx', {
       productId: params.productId,
       user: params.user,
     });
-    return { hash: '' };
+    throw new DoubloonError(
+      'RPC_ERROR',
+      'EVM writer requires a configured wallet client. Install viem and use createWalletClient.',
+    );
   }
 
   /**
    * Revokes an existing entitlement.
-   * Placeholder – returns an empty hash until viem integration is complete.
+   * Requires a configured viem WalletClient.
    */
   async revokeEntitlement(params: RevokeInstruction): Promise<{ hash: string }> {
-    this.logger.info('Building revokeEntitlement tx (placeholder – no wallet client configured)', {
+    this.logger.info('Building revokeEntitlement tx', {
       productId: params.productId,
       user: params.user,
     });
-    return { hash: '' };
+    throw new DoubloonError(
+      'RPC_ERROR',
+      'EVM writer requires a configured wallet client. Install viem and use createWalletClient.',
+    );
   }
 }

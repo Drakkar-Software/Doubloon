@@ -12,23 +12,32 @@ describe('DoubloonNFTClient', () => {
     expect(client).toBeDefined();
   });
 
-  it('getExpiration returns null for non-existent token', async () => {
-    const result = await client.getExpiration('0x123');
-    expect(result).toBeNull();
+  it('getExpiration throws RPC_ERROR without configured client', async () => {
+    await expect(client.getExpiration('0x123')).rejects.toThrow(
+      'NFT client requires a configured RPC client',
+    );
   });
 
-  it('isRenewable returns false by default', async () => {
-    const result = await client.isRenewable('0x123');
-    expect(result).toBe(false);
+  it('isRenewable throws RPC_ERROR without configured client', async () => {
+    await expect(client.isRenewable('0x123')).rejects.toThrow(
+      'NFT client requires a configured RPC client',
+    );
   });
 
-  it('mintSubscriptionNFT returns hash', async () => {
-    const result = await client.mintSubscriptionNFT({
-      productId: 'a'.repeat(64),
-      user: '0x1234567890abcdef1234567890abcdef12345678',
-      expiration: new Date('2025-01-01'),
-      renewable: true,
-    });
-    expect(result).toHaveProperty('hash');
+  it('mintSubscriptionNFT throws RPC_ERROR without configured client', async () => {
+    await expect(
+      client.mintSubscriptionNFT({
+        productId: 'a'.repeat(64),
+        user: '0x1234567890abcdef1234567890abcdef12345678',
+        expiration: new Date('2025-01-01'),
+        renewable: true,
+      }),
+    ).rejects.toThrow('NFT client requires a configured wallet client');
+  });
+
+  it('computeTokenId throws without viem', () => {
+    expect(() =>
+      client.computeTokenId('a'.repeat(64), '0x1234567890abcdef1234567890abcdef12345678'),
+    ).toThrow('NFT client requires viem');
   });
 });

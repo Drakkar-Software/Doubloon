@@ -1,5 +1,5 @@
 import type { Logger } from '@doubloon/core';
-import { nullLogger } from '@doubloon/core';
+import { DoubloonError, nullLogger } from '@doubloon/core';
 
 export interface DoubloonNFTConfig {
   contractAddress: string;
@@ -18,20 +18,27 @@ export class DoubloonNFTClient {
   }
 
   computeTokenId(productId: string, userAddress: string): string {
-    // keccak256(abi.encodePacked(productId, user))
-    // In production, use viem's keccak256
     this.logger.debug('computeTokenId', { productId, userAddress });
-    return '';
+    throw new DoubloonError(
+      'RPC_ERROR',
+      'NFT client requires viem for keccak256. Install viem and configure a PublicClient.',
+    );
   }
 
   async getExpiration(tokenId: string): Promise<Date | null> {
     this.logger.debug('getExpiration', { tokenId });
-    return null;
+    throw new DoubloonError(
+      'RPC_ERROR',
+      'NFT client requires a configured RPC client. Install viem and pass a PublicClient.',
+    );
   }
 
   async isRenewable(tokenId: string): Promise<boolean> {
     this.logger.debug('isRenewable', { tokenId });
-    return false;
+    throw new DoubloonError(
+      'RPC_ERROR',
+      'NFT client requires a configured RPC client. Install viem and pass a PublicClient.',
+    );
   }
 
   async mintSubscriptionNFT(params: {
@@ -41,7 +48,10 @@ export class DoubloonNFTClient {
     renewable: boolean;
   }): Promise<{ hash: string }> {
     this.logger.info('mintSubscriptionNFT', params);
-    return { hash: '' };
+    throw new DoubloonError(
+      'RPC_ERROR',
+      'NFT client requires a configured wallet client. Install viem and use createWalletClient.',
+    );
   }
 
   async renewSubscription(params: {
@@ -49,6 +59,9 @@ export class DoubloonNFTClient {
     durationSeconds: number;
   }): Promise<{ hash: string }> {
     this.logger.info('renewSubscription', params);
-    return { hash: '' };
+    throw new DoubloonError(
+      'RPC_ERROR',
+      'NFT client requires a configured wallet client. Install viem and use createWalletClient.',
+    );
   }
 }

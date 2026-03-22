@@ -8,14 +8,27 @@ describe('DoubloonEvmReader', () => {
     chainId: 8453,
   });
 
-  it('checkEntitlement returns not_found for non-existent', async () => {
-    const result = await reader.checkEntitlement('a'.repeat(64), '0x1234567890abcdef1234567890abcdef12345678');
-    expect(result.entitled).toBe(false);
-    expect(result.reason).toBe('not_found');
+  it('checkEntitlement throws RPC_ERROR without configured client', async () => {
+    await expect(
+      reader.checkEntitlement('a'.repeat(64), '0x1234567890abcdef1234567890abcdef12345678'),
+    ).rejects.toThrow('EVM reader requires a configured RPC client');
   });
 
-  it('getProduct returns null for non-existent', async () => {
-    const result = await reader.getProduct('a'.repeat(64));
-    expect(result).toBeNull();
+  it('getProduct throws RPC_ERROR without configured client', async () => {
+    await expect(reader.getProduct('a'.repeat(64))).rejects.toThrow(
+      'EVM reader requires a configured RPC client',
+    );
+  });
+
+  it('isEntitled throws RPC_ERROR without configured client', async () => {
+    await expect(
+      reader.isEntitled('a'.repeat(64), '0x1234567890abcdef1234567890abcdef12345678'),
+    ).rejects.toThrow('EVM reader requires a configured RPC client');
+  });
+
+  it('getEntitlement throws RPC_ERROR without configured client', async () => {
+    await expect(
+      reader.getEntitlement('a'.repeat(64), '0x1234567890abcdef1234567890abcdef12345678'),
+    ).rejects.toThrow('EVM reader requires a configured RPC client');
   });
 });
