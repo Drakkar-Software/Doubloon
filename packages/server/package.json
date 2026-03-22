@@ -1,0 +1,42 @@
+{
+  "name": "@doubloon/server",
+  "version": "0.1.0",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": ["dist"],
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest run",
+    "lint": "eslint src/"
+  },
+  "dependencies": {
+    "@doubloon/core": "workspace:*"
+  },
+  "devDependencies": {
+    "typescript": "^5.6.0",
+    "vitest": "^2.1.0"
+  },
+  "peerDependencies": {
+    "@doubloon/solana": "workspace:*",
+    "@doubloon/evm": "workspace:*",
+    "@doubloon/bridge-apple": "workspace:*",
+    "@doubloon/bridge-google": "workspace:*",
+    "@doubloon/bridge-stripe": "workspace:*",
+    "@doubloon/bridge-x402": "workspace:*"
+  },
+  "peerDependenciesMeta": {
+    "@doubloon/solana": { "optional": true },
+    "@doubloon/evm": { "optional": true },
+    "@doubloon/bridge-apple": { "optional": true },
+    "@doubloon/bridge-google": { "optional": true },
+    "@doubloon/bridge-stripe": { "optional": true },
+    "@doubloon/bridge-x402": { "optional": true }
+  }
+}

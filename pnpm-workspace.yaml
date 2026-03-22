@@ -1,0 +1,6 @@
+packages:
+  - "packages/*"
+  - "packages/chains/*"
+  - "packages/clients/*"
+  - "packages/bridges/*"
+  - "packages/storage/*"

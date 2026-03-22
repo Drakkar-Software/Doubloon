@@ -1,0 +1,2 @@
+// @doubloon/storage - placeholder
+export {};

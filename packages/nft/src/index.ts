@@ -1,0 +1,2 @@
+// @doubloon/nft - placeholder
+export {};
