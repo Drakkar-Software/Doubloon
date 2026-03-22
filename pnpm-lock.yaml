@@ -73,12 +73,15 @@ importers:
       '@apple/app-store-server-library':
         specifier: ^3.0.0
         version: 3.0.0
+      '@types/node':
+        specifier: ^22.0.0
+        version: 22.7.5
       typescript:
         specifier: ^5.6.0
         version: 5.9.3
       vitest:
         specifier: ^2.1.0
-        version: 2.1.9(@types/node@25.5.0)
+        version: 2.1.9(@types/node@22.7.5)
 
   packages/bridges/google:
     dependencies:
@@ -92,6 +95,9 @@ importers:
         specifier: workspace:*
         version: link:../../storage/core
     devDependencies:
+      '@types/node':
+        specifier: ^22.0.0
+        version: 22.7.5
       googleapis:
         specifier: ^144.0.0
         version: 144.0.0
@@ -100,7 +106,7 @@ importers:
         version: 5.9.3
       vitest:
         specifier: ^2.1.0
-        version: 2.1.9(@types/node@25.5.0)
+        version: 2.1.9(@types/node@22.7.5)
 
   packages/bridges/stripe:
     dependencies:
@@ -114,6 +120,9 @@ importers:
         specifier: workspace:*
         version: link:../../storage/core
     devDependencies:
+      '@types/node':
+        specifier: ^22.0.0
+        version: 22.7.5
       stripe:
         specifier: ^17.0.0
         version: 17.7.0
@@ -122,7 +131,7 @@ importers:
         version: 5.9.3
       vitest:
         specifier: ^2.1.0
-        version: 2.1.9(@types/node@25.5.0)
+        version: 2.1.9(@types/node@22.7.5)
 
   packages/bridges/x402:
     dependencies:
@@ -136,12 +145,15 @@ importers:
         specifier: workspace:*
         version: link:../../storage/core
     devDependencies:
+      '@types/node':
+        specifier: ^22.0.0
+        version: 22.7.5
       typescript:
         specifier: ^5.6.0
         version: 5.9.3
       vitest:
         specifier: ^2.1.0
-        version: 2.1.9(@types/node@25.5.0)
+        version: 2.1.9(@types/node@22.7.5)
 
   packages/chains/evm:
     dependencies:
