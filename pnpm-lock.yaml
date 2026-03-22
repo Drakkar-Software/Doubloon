@@ -161,6 +161,9 @@ importers:
         specifier: workspace:*
         version: link:../../core
     devDependencies:
+      '@types/node':
+        specifier: ^22.0.0
+        version: 22.7.5
       typescript:
         specifier: ^5.6.0
         version: 5.9.3
@@ -169,7 +172,7 @@ importers:
         version: 2.47.6(bufferutil@4.1.0)(typescript@5.9.3)(utf-8-validate@6.0.6)
       vitest:
         specifier: ^2.1.0
-        version: 2.1.9(@types/node@25.5.0)
+        version: 2.1.9(@types/node@22.7.5)
 
   packages/chains/solana:
     dependencies:
@@ -255,12 +258,15 @@ importers:
         specifier: workspace:*
         version: link:../chains/solana
     devDependencies:
+      '@types/node':
+        specifier: ^22.0.0
+        version: 22.7.5
       typescript:
         specifier: ^5.6.0
         version: 5.9.3
       vitest:
         specifier: ^2.1.0
-        version: 2.1.9(@types/node@25.5.0)
+        version: 2.1.9(@types/node@22.7.5)
 
   packages/storage/core:
     dependencies:
