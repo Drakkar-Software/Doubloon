@@ -1,0 +1,134 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://doubloon.dev/schema/types.json",
+  "title": "Doubloon Types",
+  "description": "JSON Schema for all shared Doubloon types. Source of truth for codegen.",
+  "$defs": {
+    "Chain": {
+      "type": "string",
+      "enum": ["solana", "evm"]
+    },
+    "Store": {
+      "type": "string",
+      "enum": ["apple", "google", "stripe", "x402"]
+    },
+    "EntitlementSource": {
+      "type": "string",
+      "enum": ["platform", "creator", "delegate", "apple", "google", "stripe", "x402"]
+    },
+    "NotificationType": {
+      "type": "string",
+      "enum": [
+        "initial_purchase", "renewal", "cancellation", "uncancellation",
+        "expiration", "refund", "revocation", "billing_recovery",
+        "billing_retry_start", "grace_period_start", "price_increase_consent",
+        "offer_redeemed", "plan_change", "pause", "resume", "test"
+      ]
+    },
+    "Platform": {
+      "type": "object",
+      "properties": {
+        "authority": { "type": "string" },
+        "productCount": { "type": "integer" },
+        "frozen": { "type": "boolean" }
+      },
+      "required": ["authority", "productCount", "frozen"]
+    },
+    "Product": {
+      "type": "object",
+      "properties": {
+        "creator": { "type": "string" },
+        "productId": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+        "name": { "type": "string", "maxLength": 64 },
+        "metadataUri": { "type": "string", "maxLength": 200 },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" },
+        "active": { "type": "boolean" },
+        "frozen": { "type": "boolean" },
+        "entitlementCount": { "type": "integer" },
+        "delegateCount": { "type": "integer" },
+        "defaultDuration": { "type": "integer" }
+      },
+      "required": ["creator", "productId", "name", "metadataUri", "createdAt", "updatedAt", "active", "frozen", "entitlementCount", "delegateCount", "defaultDuration"]
+    },
+    "MintDelegate": {
+      "type": "object",
+      "properties": {
+        "productId": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+        "delegate": { "type": "string" },
+        "grantedBy": { "type": "string" },
+        "grantedAt": { "type": "string", "format": "date-time" },
+        "expiresAt": { "type": ["string", "null"], "format": "date-time" },
+        "maxMints": { "type": "integer" },
+        "mintsUsed": { "type": "integer" },
+        "active": { "type": "boolean" }
+      },
+      "required": ["productId", "delegate", "grantedBy", "grantedAt", "expiresAt", "maxMints", "mintsUsed", "active"]
+    },
+    "Entitlement": {
+      "type": "object",
+      "properties": {
+        "productId": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+        "user": { "type": "string" },
+        "grantedAt": { "type": "string", "format": "date-time" },
+        "expiresAt": { "type": ["string", "null"], "format": "date-time" },
+        "autoRenew": { "type": "boolean" },
+        "source": { "$ref": "#/$defs/EntitlementSource" },
+        "sourceId": { "type": "string", "maxLength": 128 },
+        "active": { "type": "boolean" },
+        "revokedAt": { "type": ["string", "null"], "format": "date-time" },
+        "revokedBy": { "type": ["string", "null"] }
+      },
+      "required": ["productId", "user", "grantedAt", "expiresAt", "autoRenew", "source", "sourceId", "active", "revokedAt", "revokedBy"]
+    },
+    "EntitlementCheck": {
+      "type": "object",
+      "properties": {
+        "entitled": { "type": "boolean" },
+        "entitlement": { "oneOf": [{ "$ref": "#/$defs/Entitlement" }, { "type": "null" }] },
+        "reason": { "type": "string", "enum": ["active", "not_found", "expired", "revoked"] },
+        "expiresAt": { "type": ["string", "null"], "format": "date-time" },
+        "product": { "oneOf": [{ "$ref": "#/$defs/Product" }, { "type": "null" }] }
+      },
+      "required": ["entitled", "entitlement", "reason", "expiresAt", "product"]
+    },
+    "MintInstruction": {
+      "type": "object",
+      "properties": {
+        "productId": { "type": "string" },
+        "user": { "type": "string" },
+        "expiresAt": { "type": ["string", "null"], "format": "date-time" },
+        "source": { "$ref": "#/$defs/EntitlementSource" },
+        "sourceId": { "type": "string" }
+      },
+      "required": ["productId", "user", "expiresAt", "source", "sourceId"]
+    },
+    "RevokeInstruction": {
+      "type": "object",
+      "properties": {
+        "productId": { "type": "string" },
+        "user": { "type": "string" },
+        "reason": { "type": "string" }
+      },
+      "required": ["productId", "user", "reason"]
+    },
+    "StoreNotification": {
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "type": { "$ref": "#/$defs/NotificationType" },
+        "store": { "$ref": "#/$defs/Store" },
+        "environment": { "type": "string" },
+        "productId": { "type": "string" },
+        "userWallet": { "type": "string" },
+        "originalTransactionId": { "type": "string" },
+        "expiresAt": { "type": ["string", "null"], "format": "date-time" },
+        "autoRenew": { "type": "boolean" },
+        "storeTimestamp": { "type": "string", "format": "date-time" },
+        "receivedTimestamp": { "type": "string", "format": "date-time" },
+        "deduplicationKey": { "type": "string" }
+      },
+      "required": ["id", "type", "store", "environment", "productId", "userWallet", "originalTransactionId", "expiresAt", "autoRenew", "storeTimestamp", "receivedTimestamp", "deduplicationKey"]
+    }
+  }
+}
