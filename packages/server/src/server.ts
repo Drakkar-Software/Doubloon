@@ -64,6 +64,7 @@ export interface ServerConfig {
 
   isDuplicate?: (key: string) => Promise<boolean>;
   markProcessed?: (key: string) => Promise<void>;
+  clearProcessed?: (key: string) => Promise<void>;
 
   logger?: Logger;
 }
@@ -130,32 +131,42 @@ export function createServer(config: ServerConfig) {
         return { status: 200 };
       }
 
-      // Process instruction
-      if (result.instruction) {
-        await processInstruction(result.instruction, result.notification, store);
-      }
-
-      // Google acknowledgment
-      if (
-        store === 'google' &&
-        'requiresAcknowledgment' in result &&
-        result.requiresAcknowledgment &&
-        config.onAcknowledgmentRequired
-      ) {
-        const purchaseToken = result.notification.originalTransactionId || result.notification.id;
-        await config.onAcknowledgmentRequired(purchaseToken, new Date(Date.now() + 3 * 86400000));
-      }
-
-      // Mark as processed
+      // Mark as processed BEFORE processing to prevent duplicate processing
       if (config.markProcessed) {
         await config.markProcessed(result.notification.deduplicationKey);
+      }
+
+      try {
+        // Process instruction
+        if (result.instruction) {
+          await processInstruction(result.instruction, result.notification, store);
+        }
+
+        // Google acknowledgment
+        if (
+          store === 'google' &&
+          'requiresAcknowledgment' in result &&
+          result.requiresAcknowledgment &&
+          config.onAcknowledgmentRequired
+        ) {
+          const purchaseToken = result.notification.originalTransactionId || result.notification.id;
+          await config.onAcknowledgmentRequired(purchaseToken, new Date(Date.now() + 3 * 86400000));
+        }
+      } catch (processingError) {
+        // Clear the dedup key so the store can retry
+        if (config.clearProcessed) {
+          try {
+            await config.clearProcessed(result.notification.deduplicationKey);
+          } catch { /* don't mask the original error */ }
+        }
+        throw processingError;
       }
 
       return { status: 200 };
     } catch (err) {
       logger.error('Webhook processing failed', { store, error: err });
       if (err instanceof DoubloonError) {
-        const clientErrorCodes = ['INVALID_RECEIPT', 'PRODUCT_NOT_MAPPED', 'WALLET_NOT_LINKED', 'SIGNATURE_INVALID'];
+        const clientErrorCodes = ['INVALID_RECEIPT', 'PRODUCT_NOT_MAPPED', 'WALLET_NOT_LINKED', 'INVALID_SIGNATURE'];
         if (clientErrorCodes.includes(err.code)) {
           return { status: 400, body: err.message };
         }
@@ -235,6 +246,7 @@ export function createServer(config: ServerConfig) {
           user: revoke.user,
           error: err,
         });
+        throw err;
       }
     }
   }

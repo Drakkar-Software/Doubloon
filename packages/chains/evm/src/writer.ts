@@ -40,6 +40,7 @@ export class DoubloonEvmWriter {
    * Requires a configured viem WalletClient.
    */
   async mintEntitlement(params: MintInstruction & {
+    signer?: string;
     autoRenew?: boolean;
   }): Promise<{ hash: string }> {
     this.logger.info('Building mintEntitlement tx', {
@@ -56,7 +57,7 @@ export class DoubloonEvmWriter {
    * Revokes an existing entitlement.
    * Requires a configured viem WalletClient.
    */
-  async revokeEntitlement(params: RevokeInstruction): Promise<{ hash: string }> {
+  async revokeEntitlement(params: RevokeInstruction & { signer?: string }): Promise<{ hash: string }> {
     this.logger.info('Building revokeEntitlement tx', {
       productId: params.productId,
       user: params.user,

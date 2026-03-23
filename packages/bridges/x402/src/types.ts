@@ -8,5 +8,6 @@ export interface X402BridgeResult {
 export interface X402BridgeConfig {
   facilitatorUrl: string;
   productResolver: import('@doubloon/storage').StoreProductResolver;
+  metadataStore?: import('@doubloon/storage').MetadataStore;
   logger?: import('@doubloon/core').Logger;
 }

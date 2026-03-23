@@ -115,6 +115,7 @@ export class AppleBridge {
       case 'billing_recovery':
       case 'offer_redeemed':
       case 'plan_change':
+      case 'resume':
         return {
           productId,
           user: wallet,
@@ -138,7 +139,6 @@ export class AppleBridge {
       case 'billing_retry_start':
       case 'price_increase_consent':
       case 'pause':
-      case 'resume':
       case 'test':
         return null;
 

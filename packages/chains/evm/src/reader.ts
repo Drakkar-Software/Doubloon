@@ -1,5 +1,5 @@
 import type {
-  Entitlement, EntitlementCheck, EntitlementSource, Product, Logger, Platform,
+  Entitlement, EntitlementCheck, EntitlementCheckBatch, EntitlementSource, Product, Logger, Platform,
 } from '@doubloon/core';
 import { checkEntitlement, DoubloonError, nullLogger, U8_TO_ENTITLEMENT_SOURCE } from '@doubloon/core';
 import { DoubloonAbi } from './abi.js';
@@ -50,6 +50,14 @@ export class DoubloonEvmReader {
 
   async checkEntitlement(productId: string, userAddress: string): Promise<EntitlementCheck> {
     this.logger.debug('checkEntitlement', { productId, userAddress });
+    throw new DoubloonError(
+      'RPC_ERROR',
+      'EVM reader requires a configured RPC client. Install viem and pass a PublicClient via the rpc config option.',
+    );
+  }
+
+  async checkEntitlements(productIds: string[], userAddress: string): Promise<EntitlementCheckBatch> {
+    this.logger.debug('checkEntitlements', { productIds, userAddress });
     throw new DoubloonError(
       'RPC_ERROR',
       'EVM reader requires a configured RPC client. Install viem and pass a PublicClient via the rpc config option.',
