@@ -7,7 +7,7 @@ import type {
   Store,
   Logger,
 } from '@doubloon/core';
-import { nullLogger, isMintInstruction } from '@doubloon/core';
+import { nullLogger, isMintInstruction, DoubloonError } from '@doubloon/core';
 import { mintWithRetry } from './mint-retry.js';
 import type { ChainWriter, ChainSigner, MintRetryOpts, MintRetryResult } from './mint-retry.js';
 
@@ -112,7 +112,7 @@ export function createServer(config: ServerConfig) {
     store: Store,
     bridge: ServerConfig['bridges'][keyof ServerConfig['bridges']],
     req: { headers: Record<string, string>; body: Buffer | string },
-  ): Promise<{ status: number }> {
+  ): Promise<{ status: number; body?: string }> {
     if (!bridge) return { status: 404 };
 
     try {
@@ -154,6 +154,12 @@ export function createServer(config: ServerConfig) {
       return { status: 200 };
     } catch (err) {
       logger.error('Webhook processing failed', { store, error: err });
+      if (err instanceof DoubloonError) {
+        const clientErrorCodes = ['INVALID_RECEIPT', 'PRODUCT_NOT_MAPPED', 'WALLET_NOT_LINKED', 'SIGNATURE_INVALID'];
+        if (clientErrorCodes.includes(err.code)) {
+          return { status: 400, body: err.message };
+        }
+      }
       return { status: 500 };
     }
   }

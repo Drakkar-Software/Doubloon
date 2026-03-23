@@ -43,7 +43,16 @@ export class GoogleBridge {
    * Pub/Sub message `data` field.
    */
   async handleNotification(messageData: string): Promise<BridgeResult> {
-    const rtdn: GoogleRTDN = JSON.parse(messageData);
+    let rtdn: GoogleRTDN;
+    try {
+      rtdn = JSON.parse(messageData);
+    } catch {
+      throw new DoubloonError('INVALID_RECEIPT', 'Invalid Google RTDN message body');
+    }
+
+    if (typeof rtdn.packageName !== 'string') {
+      throw new DoubloonError('INVALID_RECEIPT', 'Missing packageName in Google RTDN');
+    }
 
     if (rtdn.testNotification) {
       const notification: StoreNotification = {

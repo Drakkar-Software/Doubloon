@@ -27,7 +27,10 @@ export async function signAndSend(
     transaction.feePayer = signer.publicKey;
     transaction.sign(signer);
   } else {
-    transaction.feePayer = signer.publicKey!;
+    if (!signer.publicKey) {
+      throw new DoubloonError('AUTHORITY_MISMATCH', 'Wallet not connected');
+    }
+    transaction.feePayer = signer.publicKey;
     await signer.signTransaction(transaction);
   }
 

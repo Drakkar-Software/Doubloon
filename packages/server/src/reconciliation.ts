@@ -66,8 +66,16 @@ export function createReconciliationRunner(config: ReconciliationConfig) {
             logger.info('Reconciliation: minted', { subscriptionId: item.subscriptionId });
           }
         } else {
-          report.revoked++;
-          logger.info('Reconciliation: revoked', { subscriptionId: item.subscriptionId });
+          const revoke = result.instruction as RevokeInstruction;
+          if (config.writer.revokeEntitlement) {
+            const tx = await config.writer.revokeEntitlement({
+              ...revoke,
+              signer: config.signer.publicKey,
+            });
+            await config.signer.signAndSend(tx);
+            report.revoked++;
+            logger.info('Reconciliation: revoked', { subscriptionId: item.subscriptionId });
+          }
         }
       } catch (err) {
         report.errors.push({

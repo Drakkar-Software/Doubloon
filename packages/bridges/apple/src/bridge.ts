@@ -163,7 +163,7 @@ export class AppleBridge {
       userWallet: wallet,
       originalTransactionId: String(tx.originalTransactionId ?? tx.transactionId ?? ''),
       expiresAt: tx.expiresDate ? new Date(tx.expiresDate as number) : null,
-      autoRenew: true,
+      autoRenew: type !== 'cancellation' && type !== 'expiration' && (tx.autoRenewStatus as number) !== 0,
       storeTimestamp: tx.purchaseDate ? new Date(tx.purchaseDate as number) : new Date(),
       receivedTimestamp: new Date(),
       deduplicationKey: computeAppleDeduplicationKey(type, tx as any),

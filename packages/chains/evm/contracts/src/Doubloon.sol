@@ -100,6 +100,7 @@ contract Doubloon {
     }
 
     function transferPlatformAuthority(address newAuthority) external onlyPlatform {
+        require(newAuthority != address(0), "Cannot transfer to zero address");
         address old = platformAuthority;
         platformAuthority = newAuthority;
         emit PlatformAuthorityTransferred(old, newAuthority);
@@ -157,21 +158,25 @@ contract Doubloon {
     }
 
     function deactivateProduct(bytes32 productId) external onlyCreatorOrPlatform(productId) {
+        require(products[productId].exists, "Product does not exist");
         products[productId].active = false;
         products[productId].updatedAt = uint64(block.timestamp);
     }
 
     function reactivateProduct(bytes32 productId) external onlyCreatorOrPlatform(productId) {
+        require(products[productId].exists, "Product does not exist");
         products[productId].active = true;
         products[productId].updatedAt = uint64(block.timestamp);
     }
 
     function freezeProduct(bytes32 productId) external onlyPlatform {
+        require(products[productId].exists, "Product does not exist");
         products[productId].frozen = true;
         products[productId].updatedAt = uint64(block.timestamp);
     }
 
     function unfreezeProduct(bytes32 productId) external onlyPlatform {
+        require(products[productId].exists, "Product does not exist");
         products[productId].frozen = false;
         products[productId].updatedAt = uint64(block.timestamp);
     }
@@ -289,6 +294,7 @@ contract Doubloon {
         address user
     ) external onlyCreatorOrPlatform(productId) {
         EntitlementData storage e = entitlements[productId][user];
+        require(e.exists, "Entitlement does not exist");
         e.active = false;
         e.revokedAt = uint64(block.timestamp);
         e.revokedBy = msg.sender;

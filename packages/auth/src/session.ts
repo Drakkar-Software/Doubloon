@@ -34,7 +34,17 @@ export function verifySessionToken(
     throw new DoubloonError('SIGNATURE_INVALID', 'Invalid session token signature');
   }
 
-  const payload = JSON.parse(new TextDecoder().decode(payloadBytes));
+  let payload: { w?: unknown; e?: unknown };
+  try {
+    payload = JSON.parse(new TextDecoder().decode(payloadBytes));
+  } catch {
+    throw new DoubloonError('SIGNATURE_INVALID', 'Malformed session token payload');
+  }
+
+  if (typeof payload.w !== 'string' || typeof payload.e !== 'number') {
+    throw new DoubloonError('SIGNATURE_INVALID', 'Malformed session token payload');
+  }
+
   const expiresAt = new Date(payload.e);
 
   if (expiresAt < new Date()) {

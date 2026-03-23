@@ -52,7 +52,12 @@ export function verifySIWS(
     throw new DoubloonError('SIGNATURE_INVALID', 'Message has expired');
   }
 
-  const publicKey = new PublicKey(wallet);
+  let publicKey: PublicKey;
+  try {
+    publicKey = new PublicKey(wallet);
+  } catch {
+    throw new DoubloonError('SIGNATURE_INVALID', 'Invalid wallet address in SIWS message');
+  }
   const messageBytes = new TextEncoder().encode(message);
   const valid = nacl.sign.detached.verify(messageBytes, signature, publicKey.toBytes());
   if (!valid) {
