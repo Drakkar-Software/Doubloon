@@ -34,7 +34,8 @@ HTTP 402 (x402) ──┘   Server         └─── EVM Contract
 - **SIWS authentication** -- Sign In With Solana message creation, verification with domain binding, and Ed25519 session tokens.
 - **Pluggable storage** -- In-memory, Redis, Postgres, and S3 adapters for metadata, caching, and deduplication.
 - **Local dev chain** -- In-memory chain provider for testing and development without blockchain infrastructure.
-- **Client SDKs** -- React Native, Python, and web integration patterns out of the box.
+- **On-device entitlement checking** -- Lightweight checkers that query chain RPCs directly from mobile, with no server round-trip. Available as TypeScript (React Native/web), Swift (iOS), and Kotlin (Android).
+- **Client SDKs** -- React Native, Python, native iOS/Android, and web integration patterns out of the box.
 
 ---
 
@@ -57,6 +58,9 @@ HTTP 402 (x402) ──┘   Server         └─── EVM Contract
 | `@doubloon/storage-postgres` | Postgres metadata store, wallet resolver, migration SQL |
 | `@doubloon/storage-s3` | S3/R2 metadata store for product JSON and binary assets |
 | `@doubloon/react-native` | Entitlement cache, receipt packagers, hook types |
+| `@doubloon/checker-mobile` | Lightweight on-device chain checker (Solana + EVM via direct RPC) |
+| `DoubloonChecker` (Swift) | Native iOS/macOS checker using URLSession + CryptoKit |
+| `com.doubloon.checker` (Kotlin) | Native Android checker using OkHttp + coroutines |
 | `doubloon` (Python) | Python client for entitlement verification and product ID derivation |
 
 ---
@@ -258,6 +262,123 @@ function useEntitlement(config: UseEntitlementConfig): UseEntitlementResult {
   // Returns { loading, entitled, check, error, refresh }
 }
 ```
+
+---
+
+### On-Device Chain Checking (No Server Required)
+
+For latency-sensitive mobile apps, Doubloon provides lightweight checkers that query Solana or EVM RPCs directly from the device. No server round-trip needed — just your app talking to the blockchain.
+
+**TypeScript (React Native / Web):**
+
+```bash
+pnpm add @doubloon/checker-mobile
+# Peer dependencies for Solana PDA derivation:
+pnpm add @noble/hashes @noble/curves
+```
+
+```typescript
+import { MobileSolanaChecker, MobileEvmChecker } from '@doubloon/checker-mobile';
+
+// Solana
+const solanaChecker = new MobileSolanaChecker({
+  rpcUrl: 'https://api.mainnet-beta.solana.com',
+  programId: 'YourProgramId...',
+});
+
+const check = await solanaChecker.checkEntitlement(productIdHex, walletBase58);
+if (check.entitled) {
+  // Grant access — no server needed
+}
+
+// EVM (zero additional dependencies)
+const evmChecker = new MobileEvmChecker({
+  rpcUrl: 'https://eth.llamarpc.com',
+  contractAddress: '0xYourContract...',
+});
+
+const evmCheck = await evmChecker.checkEntitlement(productIdHex, userAddress);
+
+// Batch check multiple products (single RPC call on Solana)
+const batch = await solanaChecker.checkEntitlements(
+  ['product-a-hex', 'product-b-hex'],
+  walletBase58,
+);
+```
+
+Both checkers implement the `ChainReader` interface from `@doubloon/core`, so they're drop-in replacements for the full Solana/EVM readers.
+
+**Swift (iOS / macOS):**
+
+Add the Swift package from `packages/clients/ios/` to your Xcode project.
+
+```swift
+import DoubloonChecker
+
+// Solana
+let solana = SolanaChecker(
+    rpcUrl: URL(string: "https://api.mainnet-beta.solana.com")!,
+    programId: "YourProgramId..."
+)
+
+let check = try await solana.checkEntitlement(productId: "a7f3c9...", wallet: "Base58Wallet...")
+if check.entitled {
+    // Grant access
+}
+
+// EVM
+let evm = EvmChecker(
+    rpcUrl: URL(string: "https://eth.llamarpc.com")!,
+    contractAddress: "0xYourContract..."
+)
+
+let evmCheck = try await evm.checkEntitlement(productId: "a7f3c9...", wallet: "0xUser...")
+
+// Batch check (concurrent with Swift TaskGroup)
+let results = try await solana.checkEntitlements(
+    productIds: ["product-a-hex", "product-b-hex"],
+    wallet: "Base58Wallet..."
+)
+```
+
+**Kotlin (Android):**
+
+Add the module from `packages/clients/android/` to your Gradle project.
+
+```kotlin
+import com.doubloon.checker.*
+
+// Solana
+val solana = SolanaChecker(
+    rpcUrl = "https://api.mainnet-beta.solana.com",
+    programId = "YourProgramId..."
+)
+
+val check = solana.checkEntitlement("a7f3c9...", "Base58Wallet...")
+if (check.entitled) {
+    // Grant access
+}
+
+// EVM
+val evm = EvmChecker(
+    rpcUrl = "https://eth.llamarpc.com",
+    contractAddress = "0xYourContract..."
+)
+
+val evmCheck = evm.checkEntitlement("a7f3c9...", "0xUser...")
+
+// Batch check (concurrent with coroutines)
+val results = solana.checkEntitlements(
+    listOf("product-a-hex", "product-b-hex"),
+    "Base58Wallet..."
+)
+```
+
+All three implementations (TypeScript, Swift, Kotlin) include:
+- Full Solana PDA derivation (SHA-256 + ed25519 off-curve check)
+- Binary account deserialization matching the on-chain layout
+- EVM ABI encoding/decoding for Doubloon contract view functions
+- The same pure `checkEntitlement()` logic as the server
 
 ---
 
@@ -611,6 +732,9 @@ packages/
     s3/                  # S3 metadata store
   clients/
     react-native/        # Mobile client SDK
+    checker-mobile/      # Lightweight on-device chain checker (TS)
+    ios/                 # Native iOS/macOS checker (Swift)
+    android/             # Native Android checker (Kotlin)
     python/              # Python client
 scripts/
   deploy-program.ts      # Solana program deployment
