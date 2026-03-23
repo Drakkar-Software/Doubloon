@@ -7,7 +7,7 @@ import type {
   Store,
   Logger,
 } from '@doubloon/core';
-import { nullLogger } from '@doubloon/core';
+import { nullLogger, isMintInstruction } from '@doubloon/core';
 import { mintWithRetry } from './mint-retry.js';
 import type { ChainWriter, ChainSigner, MintRetryOpts, MintRetryResult } from './mint-retry.js';
 
@@ -78,12 +78,13 @@ export function createServer(config: ServerConfig) {
     if (req.headers['stripe-signature']) return 'stripe';
 
     const bodyStr = typeof req.body === 'string' ? req.body : req.body.toString('utf-8');
+
+    if (bodyStr.startsWith('eyJ') || bodyStr.startsWith('{"signedPayload"')) return 'apple';
+
     try {
       const parsed = JSON.parse(bodyStr);
       if (parsed.message?.data) return 'google';
     } catch { /* not JSON */ }
-
-    if (bodyStr.startsWith('eyJ') || bodyStr.startsWith('{"signedPayload"')) return 'apple';
 
     return null;
   }
@@ -162,8 +163,8 @@ export function createServer(config: ServerConfig) {
     notification: StoreNotification,
     store: Store,
   ): Promise<void> {
-    if ('source' in instruction) {
-      const mint = instruction as MintInstruction;
+    if (isMintInstruction(instruction)) {
+      const mint = instruction;
 
       if (config.beforeMint) {
         const allowed = await config.beforeMint(mint, notification);
@@ -202,7 +203,7 @@ export function createServer(config: ServerConfig) {
         });
       }
     } else {
-      const revoke = instruction as RevokeInstruction;
+      const revoke = instruction;
       try {
         if (config.chain.writer.revokeEntitlement) {
           const tx = await config.chain.writer.revokeEntitlement({

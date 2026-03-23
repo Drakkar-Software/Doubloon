@@ -16,6 +16,7 @@ export type {
   ProductMetadata,
   ProductStoreMapping,
 } from './types.js';
+export { isMintInstruction } from './types.js';
 
 // Errors
 export { DoubloonError } from './errors.js';

@@ -178,6 +178,13 @@ export interface RevokeInstruction {
   readonly reason: string;
 }
 
+/** Type guard: distinguishes MintInstruction from RevokeInstruction by the presence of `source`. */
+export function isMintInstruction(
+  instruction: MintInstruction | RevokeInstruction,
+): instruction is MintInstruction {
+  return 'source' in instruction;
+}
+
 /**
  * A normalized store notification event.
  */

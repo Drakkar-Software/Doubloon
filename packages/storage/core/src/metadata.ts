@@ -45,10 +45,37 @@ export interface StoreProductResolver {
 }
 
 export class DefaultStoreProductResolver implements StoreProductResolver {
+  private reverseIndex: Map<string, string> | null = null;
+
   constructor(
     private metadataStore: MetadataStore,
     private cache?: CacheAdapter,
   ) {}
+
+  private async buildReverseIndex(): Promise<Map<string, string>> {
+    if (this.reverseIndex) return this.reverseIndex;
+    const products = await this.metadataStore.listProducts();
+    const index = new Map<string, string>();
+    for (const product of products) {
+      for (const store of ['apple', 'google', 'stripe', 'x402'] as Store[]) {
+        const bindings = product.storeBindings[store];
+        if (!bindings) continue;
+        const skus: string[] = [];
+        if ('productIds' in bindings) skus.push(...bindings.productIds);
+        if ('priceIds' in bindings) skus.push(...(bindings as { priceIds: readonly string[] }).priceIds);
+        for (const sku of skus) {
+          index.set(`${store}:${sku}`, product.productId);
+        }
+      }
+    }
+    this.reverseIndex = index;
+    return index;
+  }
+
+  /** Call to invalidate the in-memory reverse index after product changes. */
+  invalidateIndex(): void {
+    this.reverseIndex = null;
+  }
 
   async resolveProductId(store: Store, storeSku: string): Promise<string | null> {
     const cacheKey = `sku:${store}:${storeSku}`;
@@ -57,20 +84,12 @@ export class DefaultStoreProductResolver implements StoreProductResolver {
       if (cached !== null) return cached;
     }
 
-    const products = await this.metadataStore.listProducts();
-    for (const product of products) {
-      const bindings = product.storeBindings[store];
-      if (!bindings) continue;
-      const skus: string[] = [];
-      if ('productIds' in bindings) skus.push(...bindings.productIds);
-      if ('priceIds' in bindings) skus.push(...(bindings as { priceIds: readonly string[] }).priceIds);
-      if (skus.includes(storeSku)) {
-        if (this.cache) await this.cache.set(cacheKey, product.productId, 300_000);
-        return product.productId;
-      }
+    const index = await this.buildReverseIndex();
+    const productId = index.get(`${store}:${storeSku}`) ?? null;
+    if (productId && this.cache) {
+      await this.cache.set(cacheKey, productId, 300_000);
     }
-
-    return null;
+    return productId;
   }
 
   async resolveStoreSku(productId: string, store: Store): Promise<string[] | null> {

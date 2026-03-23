@@ -1,5 +1,4 @@
-import type { EntitlementCheck, EntitlementCheckBatch, MintInstruction } from '@doubloon/core';
-import { checkEntitlement } from '@doubloon/core';
+import type { EntitlementCheck } from '@doubloon/core';
 
 export interface UseEntitlementConfig {
   productId: string;
@@ -40,9 +39,12 @@ export function createEntitlementChecker(config: {
       return config.reader.checkEntitlement(productId, wallet);
     },
     async checkBatch(productIds: string[], wallet: string): Promise<Record<string, EntitlementCheck>> {
+      const checks = await Promise.all(
+        productIds.map((pid) => config.reader.checkEntitlement(pid, wallet)),
+      );
       const results: Record<string, EntitlementCheck> = {};
-      for (const pid of productIds) {
-        results[pid] = await config.reader.checkEntitlement(pid, wallet);
+      for (let i = 0; i < productIds.length; i++) {
+        results[productIds[i]] = checks[i];
       }
       return results;
     },

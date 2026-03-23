@@ -38,9 +38,10 @@ export function verifySIWS(
   signature: Uint8Array,
   expectedNonce: string,
 ): { wallet: string; expiresAt: Date } {
-  const wallet = parseWalletFromMessage(message);
-  const nonce = parseFieldFromMessage(message, 'Nonce');
-  const expiresAtStr = parseFieldFromMessage(message, 'Expiration Time');
+  const lines = message.split('\n');
+  const wallet = parseWalletFromLines(lines);
+  const nonce = parseFieldFromLines(lines, 'Nonce');
+  const expiresAtStr = parseFieldFromLines(lines, 'Expiration Time');
 
   if (nonce !== expectedNonce) {
     throw new DoubloonError('SIGNATURE_INVALID', 'Nonce mismatch');
@@ -61,17 +62,16 @@ export function verifySIWS(
   return { wallet, expiresAt };
 }
 
-function parseWalletFromMessage(message: string): string {
-  const lines = message.split('\n');
+function parseWalletFromLines(lines: string[]): string {
   if (lines.length < 2) {
     throw new DoubloonError('SIGNATURE_INVALID', 'Malformed SIWS message');
   }
   return lines[1];
 }
 
-function parseFieldFromMessage(message: string, field: string): string {
+function parseFieldFromLines(lines: string[], field: string): string {
   const prefix = `${field}: `;
-  for (const line of message.split('\n')) {
+  for (const line of lines) {
     if (line.startsWith(prefix)) {
       return line.substring(prefix.length);
     }

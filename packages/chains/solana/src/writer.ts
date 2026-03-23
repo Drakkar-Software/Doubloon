@@ -29,10 +29,16 @@ function entitlementSourceToU8(source: EntitlementSource): number {
   return map[source];
 }
 
+const discriminatorCache = new Map<string, Buffer>();
 function anchorDiscriminator(name: string): Buffer {
-  return Buffer.from(
-    createHash('sha256').update(`global:${name}`).digest().subarray(0, 8),
-  );
+  let disc = discriminatorCache.get(name);
+  if (!disc) {
+    disc = Buffer.from(
+      createHash('sha256').update(`global:${name}`).digest().subarray(0, 8),
+    );
+    discriminatorCache.set(name, disc);
+  }
+  return disc;
 }
 
 // TODO: Integrate Anchor Program.methods for building instructions; transactions currently use manual serialization

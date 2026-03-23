@@ -1,5 +1,5 @@
 import type { Logger, MintInstruction, RevokeInstruction, Entitlement } from '@doubloon/core';
-import { nullLogger } from '@doubloon/core';
+import { nullLogger, isMintInstruction } from '@doubloon/core';
 import type { ChainWriter, ChainSigner, MintRetryOpts } from './mint-retry.js';
 import { mintWithRetry } from './mint-retry.js';
 
@@ -54,7 +54,7 @@ export function createReconciliationRunner(config: ReconciliationConfig) {
 
         if (!result.instruction) continue;
 
-        if ('source' in result.instruction) {
+        if (isMintInstruction(result.instruction)) {
           const mintResult = await mintWithRetry(
             config.writer,
             config.signer,

@@ -6,10 +6,11 @@ export function createSessionToken(
   serverPrivateKey: Uint8Array,
   ttlMinutes: number,
 ): string {
+  const now = Date.now();
   const payload = JSON.stringify({
     w: wallet,
-    e: Date.now() + ttlMinutes * 60_000,
-    i: Date.now(),
+    e: now + ttlMinutes * 60_000,
+    i: now,
   });
   const payloadBytes = new TextEncoder().encode(payload);
   const signature = nacl.sign.detached(payloadBytes, serverPrivateKey);
