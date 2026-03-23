@@ -10,7 +10,7 @@ export interface RedisLike {
   get(key: string): Promise<string | null>;
   set(key: string, value: string, ...args: unknown[]): Promise<unknown>;
   del(key: string | string[]): Promise<number>;
-  keys(pattern: string): Promise<string[]>;
+  scan(cursor: string, ...args: unknown[]): Promise<[string, string[]]>;
   pexpire(key: string, ms: number): Promise<number>;
   quit?(): Promise<unknown>;
 }
@@ -56,10 +56,14 @@ export class RedisCacheAdapter implements CacheAdapter {
 
   async invalidatePrefix(prefix: string): Promise<void> {
     const pattern = `${this.prefix}${prefix}*`;
-    const keys = await this.client.keys(pattern);
-    if (keys.length > 0) {
-      await this.client.del(keys);
-    }
+    let cursor = '0';
+    do {
+      const [nextCursor, keys] = await this.client.scan(cursor, 'MATCH', pattern, 'COUNT', 100);
+      cursor = nextCursor;
+      if (keys.length > 0) {
+        await this.client.del(keys);
+      }
+    } while (cursor !== '0');
   }
 
   async destroy(): Promise<void> {

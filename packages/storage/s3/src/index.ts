@@ -29,6 +29,12 @@ export interface S3MetadataStoreConfig {
 /**
  * S3-backed MetadataStore for product metadata and binary assets.
  */
+function validateS3Key(value: string, label: string): void {
+  if (/\.\./.test(value) || value.startsWith('/')) {
+    throw new Error(`Invalid ${label}: must not contain ".." or start with "/"`);
+  }
+}
+
 export class S3MetadataStore implements MetadataStore {
   private client: S3Like;
   private bucket: string;
@@ -45,6 +51,7 @@ export class S3MetadataStore implements MetadataStore {
   }
 
   async getProduct(productId: string): Promise<ProductMetadata | null> {
+    validateS3Key(productId, 'productId');
     try {
       const resp = await this.client.getObject({
         Bucket: this.bucket,
@@ -60,6 +67,7 @@ export class S3MetadataStore implements MetadataStore {
   }
 
   async putProduct(metadata: ProductMetadata): Promise<{ uri: string }> {
+    validateS3Key(metadata.productId, 'productId');
     const key = `${this.prefix}${metadata.productId}.json`;
     await this.client.putObject({
       Bucket: this.bucket,
@@ -71,6 +79,7 @@ export class S3MetadataStore implements MetadataStore {
   }
 
   async deleteProduct(productId: string): Promise<void> {
+    validateS3Key(productId, 'productId');
     await this.client.deleteObject({
       Bucket: this.bucket,
       Key: `${this.prefix}${productId}.json`,
@@ -113,6 +122,8 @@ export class S3MetadataStore implements MetadataStore {
     data: Uint8Array,
     contentType: string,
   ): Promise<{ url: string }> {
+    validateS3Key(productId, 'productId');
+    validateS3Key(name, 'asset name');
     const key = `${this.assetsPrefix}${productId}/${name}`;
     await this.client.putObject({
       Bucket: this.bucket,
@@ -127,6 +138,8 @@ export class S3MetadataStore implements MetadataStore {
   }
 
   async getAssetUrl(productId: string, name: string): Promise<string | null> {
+    validateS3Key(productId, 'productId');
+    validateS3Key(name, 'asset name');
     const key = `${this.assetsPrefix}${productId}/${name}`;
     try {
       await this.client.getObject({ Bucket: this.bucket, Key: key });

@@ -20,6 +20,13 @@ export interface PostgresMetadataStoreConfig {
 /**
  * Postgres-backed MetadataStore for product metadata and assets.
  */
+function validateTableName(name: string): string {
+  if (!/^[a-z_][a-z0-9_]{0,62}$/i.test(name)) {
+    throw new Error(`Invalid table name: "${name}" — must be a valid SQL identifier`);
+  }
+  return name;
+}
+
 export class PostgresMetadataStore implements MetadataStore {
   private pool: PgLike;
   private table: string;
@@ -27,8 +34,8 @@ export class PostgresMetadataStore implements MetadataStore {
 
   constructor(config: PostgresMetadataStoreConfig) {
     this.pool = config.pool;
-    this.table = config.tableName ?? 'doubloon_products';
-    this.assetsTable = config.assetsTable ?? 'doubloon_assets';
+    this.table = validateTableName(config.tableName ?? 'doubloon_products');
+    this.assetsTable = validateTableName(config.assetsTable ?? 'doubloon_assets');
   }
 
   async getProduct(productId: string): Promise<ProductMetadata | null> {
@@ -117,7 +124,7 @@ export class PostgresWalletResolver implements WalletResolver {
 
   constructor(config: PostgresWalletResolverConfig) {
     this.pool = config.pool;
-    this.table = config.tableName ?? 'doubloon_wallets';
+    this.table = validateTableName(config.tableName ?? 'doubloon_wallets');
   }
 
   async resolveWallet(store: Store, storeUserId: string): Promise<string | null> {

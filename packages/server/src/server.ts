@@ -118,6 +118,10 @@ export function createServer(config: ServerConfig) {
 
     try {
       const body = typeof req.body === 'string' ? Buffer.from(req.body) : req.body;
+      const maxBodySize = 1_048_576; // 1 MB
+      if (body.length > maxBodySize) {
+        return { status: 400, body: 'Payload too large' };
+      }
       const result = await bridge.handleNotification(req.headers, body);
 
       // Deduplication
