@@ -18,6 +18,7 @@
     "@doubloon/bridge-stripe": "workspace:*",
     "@doubloon/bridge-x402": "workspace:*",
     "@doubloon/chain-local": "workspace:*",
+    "@doubloon/evm": "workspace:*",
     "@doubloon/checker-mobile": "workspace:*",
     "@doubloon/core": "workspace:*",
     "@doubloon/react-native": "workspace:*",
