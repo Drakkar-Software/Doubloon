@@ -702,12 +702,23 @@ pnpm install
 # Build all packages
 pnpm build
 
-# Run all tests
+# Run unit tests (per-package)
 pnpm test
+
+# Run e2e tests (root tests/ folder)
+pnpm test:e2e
 
 # Generate Python types and JSON Schema
 npx tsx scripts/codegen.ts --target all --out generated/
 ```
+
+### CI / CD
+
+The project uses GitHub Actions (`.github/workflows/ci.yml`):
+
+- **Build & Test** — runs unit + e2e tests on Node 20 and 22
+- **Lint** — runs ESLint across all packages
+- **Publish** — publishes all packages to npm on push to `main` (requires `NPM_TOKEN` secret)
 
 ### Project Structure
 
@@ -736,6 +747,7 @@ packages/
     ios/                 # Native iOS/macOS checker (Swift)
     android/             # Native Android checker (Kotlin)
     python/              # Python client
+tests/                   # E2E integration tests (148 tests across 9 suites)
 scripts/
   deploy-program.ts      # Solana program deployment
   codegen.ts             # Type generation (Python, JSON Schema)
