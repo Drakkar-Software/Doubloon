@@ -229,6 +229,9 @@ importers:
       '@doubloon/core':
         specifier: workspace:*
         version: link:../core
+      '@doubloon/evm':
+        specifier: workspace:*
+        version: link:../chains/evm
     devDependencies:
       '@types/node':
         specifier: ^22.0.0
