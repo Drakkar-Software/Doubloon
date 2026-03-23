@@ -12,11 +12,18 @@
     "test:e2e": "vitest run --config vitest.e2e.config.ts"
   },
   "devDependencies": {
+    "@doubloon/auth": "workspace:*",
+    "@doubloon/bridge-apple": "workspace:*",
+    "@doubloon/bridge-google": "workspace:*",
+    "@doubloon/bridge-stripe": "workspace:*",
+    "@doubloon/bridge-x402": "workspace:*",
     "@doubloon/chain-local": "workspace:*",
     "@doubloon/checker-mobile": "workspace:*",
     "@doubloon/core": "workspace:*",
     "@doubloon/react-native": "workspace:*",
     "@doubloon/server": "workspace:*",
+    "@doubloon/storage": "workspace:*",
+    "@solana/web3.js": "^1.95.0",
     "@typescript-eslint/eslint-plugin": "^8.0.0",
     "@typescript-eslint/parser": "^8.0.0",
     "eslint": "^9.0.0",
@@ -24,6 +31,7 @@
     "prettier": "^3.3.0",
     "tsx": "^4.21.0",
     "turbo": "^2.3.0",
+    "tweetnacl": "^1.0.3",
     "typescript": "^5.6.0",
     "vitest": "^2.1.0"
   },
