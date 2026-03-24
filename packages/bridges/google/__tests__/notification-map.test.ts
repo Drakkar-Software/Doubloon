@@ -26,9 +26,9 @@ describe('mapGoogleNotificationType', () => {
   );
 
   it('maps unknown types to test', () => {
-    expect(mapGoogleNotificationType(0)).toBe('test');
-    expect(mapGoogleNotificationType(99)).toBe('test');
-    expect(mapGoogleNotificationType(-1)).toBe('test');
+    expect(() => mapGoogleNotificationType(0)).toThrow();
+    expect(() => mapGoogleNotificationType(99)).toThrow();
+    expect(() => mapGoogleNotificationType(-1)).toThrow();
   });
 });
 

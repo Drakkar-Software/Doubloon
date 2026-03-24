@@ -157,7 +157,7 @@ export interface EntitlementCheckBatch {
   /** Results keyed by productId. */
   readonly results: Record<string, EntitlementCheck>;
   /** The user wallet that was checked. */
-  user: string;
+  readonly user: string;
   /** When the check was performed. */
   readonly checkedAt: Date;
 }

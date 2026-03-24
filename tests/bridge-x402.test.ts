@@ -28,8 +28,8 @@ describe('x402 notification type', () => {
 
 describe('x402 deduplication key', () => {
   it('includes wallet and paymentId', () => {
-    const key = computeX402DeduplicationKey('pay-123', '0xAlice');
-    expect(key).toBe('x402:initial_purchase:0xAlice:pay-123');
+    const key = computeX402DeduplicationKey('pay-123', '0xA11ceA11ceA11ceA11ceA11ceA11ceA11ceA11ce');
+    expect(key).toBe('x402:initial_purchase:0xA11ceA11ceA11ceA11ceA11ceA11ceA11ceA11ce:pay-123');
   });
 });
 
@@ -38,7 +38,7 @@ describe('X402Bridge.verifyAndMint', () => {
     const bridge = makeX402Bridge();
     const result = await bridge.verifyAndMint({
       paymentId: 'pay-1',
-      wallet: '0xAlice',
+      wallet: '0xA11ceA11ceA11ceA11ceA11ceA11ceA11ceA11ce',
       productId: 'product-slug',
       amountUsd: 9.99,
       durationSeconds: 2592000,
@@ -48,7 +48,7 @@ describe('X402Bridge.verifyAndMint', () => {
     expect(result.notification.type).toBe('initial_purchase');
     expect(result.notification.store).toBe('x402');
     expect(result.instruction.source).toBe('x402');
-    expect(result.instruction.user).toBe('0xAlice');
+    expect(result.instruction.user).toBe('0xA11ceA11ceA11ceA11ceA11ceA11ceA11ceA11ce');
     expect(result.instruction.expiresAt).toBeInstanceOf(Date);
   });
 
@@ -56,7 +56,7 @@ describe('X402Bridge.verifyAndMint', () => {
     const bridge = makeX402Bridge();
     const result = await bridge.verifyAndMint({
       paymentId: 'pay-2',
-      wallet: '0xBob',
+      wallet: '0xb0bb0bb0bb0bb0bb0bb0bb0bb0bb0bb0bb0bb0bb',
       productId: 'lifetime-product',
       amountUsd: 99.99,
       durationSeconds: 0,
@@ -73,7 +73,7 @@ describe('X402Bridge.verifyAndMint', () => {
 
     await expect(bridge.verifyAndMint({
       paymentId: 'pay-3',
-      wallet: '0x',
+      wallet: '0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
       productId: 'unknown',
       amountUsd: 1,
       durationSeconds: 60,
@@ -93,7 +93,7 @@ describe('X402Bridge.verifyAndMint', () => {
 
     await expect(bridge.verifyAndMint({
       paymentId: 'pay-4',
-      wallet: '0x',
+      wallet: '0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
       productId: 'product',
       amountUsd: 5.00, // less than required 10
       durationSeconds: 3600,
@@ -113,7 +113,7 @@ describe('X402Bridge.verifyAndMint', () => {
 
     const result = await bridge.verifyAndMint({
       paymentId: 'pay-5',
-      wallet: '0x',
+      wallet: '0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
       productId: 'product',
       amountUsd: 10.00,
       durationSeconds: 3600,
@@ -128,7 +128,7 @@ describe('X402Bridge.verifyAndMint', () => {
 
     const result = await bridge.verifyAndMint({
       paymentId: 'pay-6',
-      wallet: '0x',
+      wallet: '0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
       productId: 'product',
       amountUsd: 0.01, // tiny amount, but no price check
       durationSeconds: 60,
@@ -150,7 +150,7 @@ describe('X402Bridge.verifyAndMint', () => {
 
     const result = await bridge.verifyAndMint({
       paymentId: 'pay-7',
-      wallet: '0x',
+      wallet: '0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
       productId: 'product',
       amountUsd: 0.01,
       durationSeconds: 60,
@@ -233,7 +233,7 @@ describe('x402 middleware', () => {
 
     const receipt = {
       paymentId: 'pay-mw-1',
-      wallet: '0xAlice',
+      wallet: '0xA11ceA11ceA11ceA11ceA11ceA11ceA11ceA11ce',
       amountUsd: 10,
       durationSeconds: 3600,
       timestamp: Date.now(),
@@ -249,7 +249,7 @@ describe('x402 middleware', () => {
     expect(next).toHaveBeenCalled();
     expect(req.doubloon).toEqual(expect.objectContaining({
       entitled: true,
-      wallet: '0xAlice',
+      wallet: '0xA11ceA11ceA11ceA11ceA11ceA11ceA11ceA11ce',
       productId: 'pid',
     }));
   });
@@ -265,7 +265,7 @@ describe('x402 middleware', () => {
 
     const receipt = {
       paymentId: 'pay-mw-2',
-      wallet: '0xBob',
+      wallet: '0xb0bb0bb0bb0bb0bb0bb0bb0bb0bb0bb0bb0bb0bb',
       amountUsd: 10,
       durationSeconds: 3600,
       timestamp: Date.now(),
@@ -277,7 +277,7 @@ describe('x402 middleware', () => {
 
     await middleware(req, res, next);
     expect(next).toHaveBeenCalled();
-    expect(req.doubloon.wallet).toBe('0xBob');
+    expect(req.doubloon.wallet).toBe('0xb0bb0bb0bb0bb0bb0bb0bb0bb0bb0bb0bb0bb0bb');
   });
 
   it('returns 402 on verification failure', async () => {
@@ -291,7 +291,7 @@ describe('x402 middleware', () => {
       durationSeconds: 3600,
     });
 
-    const receipt = { paymentId: 'p', wallet: 'w', amountUsd: 5, timestamp: Date.now() };
+    const receipt = { paymentId: 'p', wallet: '0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa', amountUsd: 5, timestamp: Date.now() };
     const req: any = { headers: { 'x-payment': JSON.stringify(receipt) } };
     const res = makeMockRes();
     const next = vi.fn();
@@ -314,7 +314,7 @@ describe('x402 middleware', () => {
 
     const receipt = {
       paymentId: 'pay-cap',
-      wallet: '0xAlice',
+      wallet: '0xA11ceA11ceA11ceA11ceA11ceA11ceA11ceA11ce',
       amountUsd: 10,
       durationSeconds: 999999, // tries to get more time
       timestamp: Date.now(),
@@ -338,7 +338,7 @@ describe('x402 middleware', () => {
       durationSeconds: 60,
     });
 
-    const receipt = { paymentId: 'p', wallet: '0xA', amountUsd: 5, timestamp: Date.now() };
+    const receipt = { paymentId: 'p', wallet: '0xA11ceA11ceA11ceA11ceA11ceA11ceA11ceA11ce', amountUsd: 5, timestamp: Date.now() };
     const req: any = { headers: { payment: JSON.stringify(receipt) } };
     const res = makeMockRes();
     const next = vi.fn();

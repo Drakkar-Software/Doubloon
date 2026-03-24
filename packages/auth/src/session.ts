@@ -1,6 +1,19 @@
 import nacl from 'tweetnacl';
 import { DoubloonError } from '@doubloon/core';
 
+/**
+ * Create a signed session token binding a wallet address to a server-issued credential.
+ * Token format: base64url(payload).base64url(signature)
+ * Payload is JSON with wallet, expiration, and issuance timestamps.
+ *
+ * @param wallet - User's wallet address (Solana or Ethereum)
+ * @param serverPrivateKey - Server's Ed25519 private key for signing
+ * @param ttlMinutes - Token validity duration in minutes
+ * @returns Compact JWS token (payload.signature in base64url format)
+ * @example
+ * const token = createSessionToken(wallet, serverPrivateKey, 60);
+ * // Token can be verified later with verifySessionToken
+ */
 export function createSessionToken(
   wallet: string,
   serverPrivateKey: Uint8Array,
@@ -17,6 +30,18 @@ export function createSessionToken(
   return `${base64url(payloadBytes)}.${base64url(signature)}`;
 }
 
+/**
+ * Verify a session token and extract the wallet and expiration.
+ * Validates the signature and checks expiration before returning credentials.
+ *
+ * @param token - JWS compact token (base64url encoded segments: payload.signature)
+ * @param serverPublicKey - Server's Ed25519 public key for verification
+ * @returns Wallet address and expiration time
+ * @throws DoubloonError if signature is invalid, token is malformed, or token has expired
+ * @example
+ * const { wallet, expiresAt } = verifySessionToken(token, serverPublicKey);
+ * if (expiresAt > new Date()) { // token is still valid }
+ */
 export function verifySessionToken(
   token: string,
   serverPublicKey: Uint8Array,

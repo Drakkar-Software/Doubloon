@@ -87,15 +87,20 @@ export class S3MetadataStore implements MetadataStore {
   }
 
   async listProducts(opts?: { creator?: string; limit?: number; offset?: number }): Promise<ProductMetadata[]> {
-    const products: ProductMetadata[] = [];
+    const limit = opts?.limit ?? 1000;
+    const offset = opts?.offset ?? 0;
+    // We need to collect at least (offset + limit) matching products before we can
+    // return the correct page. We fetch all matching products by iterating S3 pages,
+    // applying the creator filter on each, and stopping once we have enough.
+    const needed = offset + limit;
+    const matched: ProductMetadata[] = [];
     let continuationToken: string | undefined;
-    const maxKeys = opts?.limit ?? 1000;
 
     do {
       const resp = await this.client.listObjectsV2({
         Bucket: this.bucket,
         Prefix: this.prefix,
-        MaxKeys: maxKeys,
+        MaxKeys: 1000, // S3 page size, independent of caller's limit
         ContinuationToken: continuationToken,
       });
 
@@ -106,14 +111,14 @@ export class S3MetadataStore implements MetadataStore {
         );
         if (!product) continue;
         if (opts?.creator && (product as unknown as Record<string, unknown>).creator !== opts.creator) continue;
-        products.push(product);
+        matched.push(product);
+        if (matched.length >= needed) break;
       }
 
       continuationToken = resp.IsTruncated ? resp.NextContinuationToken : undefined;
-    } while (continuationToken && products.length < maxKeys);
+    } while (continuationToken && matched.length < needed);
 
-    const offset = opts?.offset ?? 0;
-    return products.slice(offset, offset + maxKeys);
+    return matched.slice(offset, offset + limit);
   }
 
   async putAsset(

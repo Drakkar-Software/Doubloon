@@ -19,15 +19,19 @@ export interface RedisCacheAdapterConfig {
   client: RedisLike;
   /** Key prefix to namespace all Doubloon keys. Defaults to "dbl:" */
   prefix?: string;
+  /** Optional logger for diagnostics (JSON parse errors, etc.). */
+  logger?: { warn(msg: string, meta?: Record<string, unknown>): void };
 }
 
 export class RedisCacheAdapter implements CacheAdapter {
   private client: RedisLike;
   private prefix: string;
+  private logger?: { warn(msg: string, meta?: Record<string, unknown>): void };
 
   constructor(config: RedisCacheAdapterConfig) {
     this.client = config.client;
     this.prefix = config.prefix ?? 'dbl:';
+    this.logger = config.logger;
   }
 
   private key(k: string): string {
@@ -39,14 +43,28 @@ export class RedisCacheAdapter implements CacheAdapter {
     if (raw === null) return null;
     try {
       return JSON.parse(raw) as T;
-    } catch {
+    } catch (err) {
+      this.logger?.warn('RedisCacheAdapter: JSON parse error, returning null', {
+        key,
+        error: err instanceof Error ? err.message : String(err),
+      });
       return null;
     }
   }
 
   async set<T = unknown>(key: string, value: T, ttlMs: number): Promise<void> {
     const prefixed = this.key(key);
-    await this.client.set(prefixed, JSON.stringify(value));
+    let serialized: string;
+    try {
+      serialized = JSON.stringify(value);
+    } catch (err) {
+      this.logger?.warn('RedisCacheAdapter: JSON stringify error', {
+        key,
+        error: err instanceof Error ? err.message : String(err),
+      });
+      throw err;
+    }
+    await this.client.set(prefixed, serialized);
     await this.client.pexpire(prefixed, ttlMs);
   }
 

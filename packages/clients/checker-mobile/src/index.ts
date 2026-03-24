@@ -37,3 +37,4 @@ export {
 
 // RPC utilities
 export { jsonRpcCall, jsonRpcBatch } from './rpc.js';
+export type { BatchResult } from './rpc.js';

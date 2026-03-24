@@ -28,6 +28,18 @@ export type ErrorCode =
   | 'NOT_SUPPORTED'
   | 'DUPLICATE_EVENT';
 
+/**
+ * Doubloon error class with contextual metadata.
+ *
+ * Extends Error with structured error codes, store/chain context, and retryability flag.
+ * Used throughout Doubloon to provide context-aware error handling and logging.
+ *
+ * @example
+ * throw new DoubloonError('PRODUCT_NOT_MAPPED', 'Unknown Stripe price ID', {
+ *   store: 'stripe',
+ *   retryable: false,
+ * });
+ */
 export class DoubloonError extends Error {
   readonly code: ErrorCode;
   readonly store?: Store;
@@ -35,6 +47,13 @@ export class DoubloonError extends Error {
   readonly retryable: boolean;
   override readonly cause?: Error;
 
+  /**
+   * Create a DoubloonError.
+   *
+   * @param code - Error code identifying the error type
+   * @param message - Human-readable error message
+   * @param opts - Optional metadata: store, chain, retryable flag, and cause
+   */
   constructor(
     code: ErrorCode,
     message: string,

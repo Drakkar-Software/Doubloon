@@ -24,6 +24,17 @@ export interface ChainSigner {
   publicKey: string;
 }
 
+/**
+ * Attempt to mint an entitlement with exponential backoff retry.
+ * Non-retryable errors (e.g., PRODUCT_NOT_ACTIVE) are returned immediately.
+ * Retryable errors (e.g., RPC_ERROR) are retried up to maxRetries times.
+ *
+ * @param writer - Chain writer implementation (Solana, EVM, or local)
+ * @param signer - Chain signer for transaction signing
+ * @param instruction - Mint instruction with product ID, user wallet, and source
+ * @param opts - Retry options (maxRetries, baseDelayMs, maxDelayMs)
+ * @returns Result with success flag, transaction signature, retry count, and last error
+ */
 export async function mintWithRetry(
   writer: ChainWriter,
   signer: ChainSigner,
@@ -53,7 +64,9 @@ export async function mintWithRetry(
       }
 
       if (attempt < maxRetries - 1) {
-        const delay = Math.min(baseDelay * Math.pow(2, attempt), maxDelay);
+        // Exponential backoff with cap to prevent overflow
+        const exponent = Math.min(attempt, 30); // 2^30 is very large already
+        const delay = Math.min(baseDelay * Math.pow(2, exponent), maxDelay);
         await sleep(delay);
       }
     }

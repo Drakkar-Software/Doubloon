@@ -42,6 +42,19 @@ export interface DoubloonSolanaReaderConfig {
   logger?: Logger;
 }
 
+/**
+ * Solana on-chain reader for Doubloon entitlements and products.
+ *
+ * Fetches and deserializes on-chain data (products, entitlements, delegates)
+ * with optional caching. Implements the EntitlementCheck interface for batch queries.
+ *
+ * @example
+ * const reader = new DoubloonSolanaReader({
+ *   rpcUrl: 'https://api.mainnet-beta.solana.com',
+ *   programId: 'DubNXFKzDiniBDcCTUzApxvwkd5fuwF8VVZZ6sDj7JJM',
+ * });
+ * const check = await reader.checkEntitlement(productId, userWallet);
+ */
 export class DoubloonSolanaReader {
   private connection: Connection;
   private programId: PublicKey;
@@ -57,6 +70,11 @@ export class DoubloonSolanaReader {
     this.logger = config.logger ?? nullLogger;
   }
 
+  /**
+   * Get the platform singleton state.
+   * @throws DoubloonError if platform PDA not found
+   * @returns Platform with authority, product count, and frozen flag
+   */
   async getPlatform(): Promise<Platform> {
     const [pda] = derivePlatformPda(this.programId);
     const account = await this.fetchAccount(pda, 'platform');
@@ -64,17 +82,36 @@ export class DoubloonSolanaReader {
     return deserializePlatform(account);
   }
 
+  /**
+   * Get a product's on-chain metadata.
+   *
+   * @param productId - Product ID (32-byte hex string)
+   * @returns Product with authority, status, and duration, or null if not found
+   */
   async getProduct(productId: string): Promise<Product | null> {
     const [pda] = deriveProductPda(productId, this.programId);
     const account = await this.fetchAccount(pda, `product:${productId}`);
     return account ? deserializeProduct(account) : null;
   }
 
+  /**
+   * Get a product by its human-readable slug.
+   *
+   * @param slug - Product slug (e.g., 'premium-plan')
+   * @returns Product metadata, or null if not found
+   */
   async getProductBySlug(slug: string): Promise<Product | null> {
     const productId = deriveProductIdHex(slug);
     return this.getProduct(productId);
   }
 
+  /**
+   * Get an entitlement for a specific product and user.
+   *
+   * @param productId - Product ID (32-byte hex string)
+   * @param userWallet - User's Solana wallet address
+   * @returns Entitlement with active status and expiration, or null if not found
+   */
   async getEntitlement(productId: string, userWallet: string): Promise<Entitlement | null> {
     const [pda] = deriveEntitlementPda(productId, userWallet, this.programId);
     const cacheKey = `entitlement:${productId}:${userWallet}`;
@@ -82,11 +119,26 @@ export class DoubloonSolanaReader {
     return account ? deserializeEntitlement(account) : null;
   }
 
+  /**
+   * Check if a user has access to a product.
+   *
+   * @param productId - Product ID (32-byte hex string)
+   * @param userWallet - User's Solana wallet address
+   * @returns EntitlementCheck with entitled flag, reason, and expiration
+   */
   async checkEntitlement(productId: string, userWallet: string): Promise<EntitlementCheck> {
     const entitlement = await this.getEntitlement(productId, userWallet);
     return checkEntitlement(entitlement);
   }
 
+  /**
+   * Batch check access across multiple products for a user.
+   * Fetches all entitlement accounts in a single RPC call for efficiency.
+   *
+   * @param productIds - Array of product IDs (32-byte hex strings)
+   * @param userWallet - User's Solana wallet address
+   * @returns EntitlementCheckBatch with results for each product
+   */
   async checkEntitlements(
     productIds: string[],
     userWallet: string,
@@ -103,11 +155,17 @@ export class DoubloonSolanaReader {
         : null;
     }
 
-    const batch = checkEntitlements(entitlements);
-    batch.user = userWallet;
-    return batch;
+    return checkEntitlements(entitlements, new Date(), userWallet);
   }
 
+  /**
+   * Get all entitlements for a user across all products.
+   * Uses Solana getProgramAccounts with a memcmp filter for efficient querying.
+   *
+   * @param userWallet - User's wallet address (base58)
+   * @param opts - Options to filter active entitlements only
+   * @returns Array of entitlements, potentially large for active users with many products
+   */
   async getUserEntitlements(
     userWallet: string,
     opts?: { activeOnly?: boolean },
@@ -125,6 +183,13 @@ export class DoubloonSolanaReader {
     return entitlements;
   }
 
+  /**
+   * Get mint delegation details for a wallet on a specific product.
+   *
+   * @param productId - Product ID (32-byte hex string)
+   * @param delegateWallet - Delegate's Solana wallet address
+   * @returns MintDelegate with expiration and remaining mints, or null if not found
+   */
   async getDelegate(productId: string, delegateWallet: string): Promise<MintDelegate | null> {
     const [pda] = deriveDelegatePda(productId, delegateWallet, this.programId);
     const account = await this.fetchAccount(pda, `delegate:${productId}:${delegateWallet}`);

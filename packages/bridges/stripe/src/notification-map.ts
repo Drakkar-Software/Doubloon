@@ -25,7 +25,10 @@ export function mapStripeEventType(
     case 'charge.refunded':
       return 'refund';
     default:
-      return 'test';
+      throw new Error(
+        `Unknown Stripe event type: "${eventType}". ` +
+        `Update mapStripeEventType to handle this type.`,
+      );
   }
 }
 

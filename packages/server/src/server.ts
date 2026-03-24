@@ -88,6 +88,16 @@ export interface ServerConfig {
   logger?: Logger;
 }
 
+/**
+ * Create a Doubloon webhook server handler.
+ *
+ * Processes store notifications (Apple, Google, Stripe, x402) with deduplication,
+ * rate limiting, and automatic retry handling. Supports custom hooks for validation
+ * and post-processing.
+ *
+ * @param config - Server configuration with chain reader/writer, bridge handlers, and hooks
+ * @returns Server with handleWebhook, checkEntitlement, and checkEntitlements methods
+ */
 export function createServer(config: ServerConfig) {
   const logger = config.logger ?? nullLogger;
 
@@ -103,6 +113,10 @@ export function createServer(config: ServerConfig) {
     ? null
     : createRateLimiter(config.rateLimiter ?? undefined);
 
+  /**
+   * Detect the store type from request headers and body.
+   * @returns The detected store type, or null if unrecognized.
+   */
   function detectStore(req: {
     headers: Record<string, string>;
     body: Buffer | string;
@@ -121,6 +135,15 @@ export function createServer(config: ServerConfig) {
     return null;
   }
 
+  /**
+   * Handle an incoming webhook from any store (Apple, Google, Stripe, x402).
+   *
+   * Applies rate limiting, detects store type, deduplicates, processes instructions,
+   * and handles acknowledgments. Returns HTTP status codes for the caller.
+   *
+   * @param req - Request with headers and body
+   * @returns HTTP status and optional error body
+   */
   async function handleWebhook(req: {
     headers: Record<string, string>;
     body: Buffer | string;
@@ -129,7 +152,7 @@ export function createServer(config: ServerConfig) {
     if (rateLimiter) {
       const allowed = await rateLimiter.check(req);
       if (!allowed) {
-        logger.warn('Rate limited', { headers: req.headers });
+        logger.warn('Rate limited', { ip: req.headers['x-forwarded-for'] ?? req.headers['x-real-ip'] ?? 'unknown' });
         return { status: 429, body: 'Too many requests' };
       }
     }
@@ -160,20 +183,25 @@ export function createServer(config: ServerConfig) {
       const body = typeof req.body === 'string' ? Buffer.from(req.body) : req.body;
       const maxBodySize = 1_048_576; // 1 MB
       if (body.length > maxBodySize) {
+        logger.warn('Webhook payload too large', { size: body.length, maxSize: maxBodySize, store });
         return { status: 400, body: 'Payload too large' };
       }
       const result = await bridge.handleNotification(req.headers, body);
 
       // Deduplication (always active)
-      if (await dedup.isDuplicate(result.notification.deduplicationKey)) {
-        logger.info('Duplicate notification, skipping', {
-          key: result.notification.deduplicationKey,
-        });
+      // Prefer atomic checkAndMark to avoid race where two concurrent webhooks
+      // both pass isDuplicate() before either calls markProcessed().
+      const dedupKey = result.notification.deduplicationKey;
+      const isDup = dedup.checkAndMark
+        ? await dedup.checkAndMark(dedupKey)
+        : (await dedup.isDuplicate(dedupKey))
+          ? true
+          : (await dedup.markProcessed(dedupKey), false);
+
+      if (isDup) {
+        logger.info('Duplicate notification, skipping', { key: dedupKey });
         return { status: 200 };
       }
-
-      // Mark as processed BEFORE processing to prevent duplicate processing
-      await dedup.markProcessed(result.notification.deduplicationKey);
 
       try {
         // Process instruction
@@ -194,7 +222,7 @@ export function createServer(config: ServerConfig) {
       } catch (processingError) {
         // Clear the dedup key so the store can retry
         try {
-          await dedup.clearProcessed(result.notification.deduplicationKey);
+          await dedup.clearProcessed(dedupKey);
         } catch { /* don't mask the original error */ }
         throw processingError;
       }

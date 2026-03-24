@@ -365,7 +365,7 @@ describe('Webhook pipeline e2e', () => {
       const server = createServer({
         chain: { reader: local.reader, writer: local.writer, signer: local.signer },
         bridges: { stripe: stripeBridge },
-        rateLimiter: { maxRequests: 1, windowMs: 60_000 },
+        rateLimiter: { maxRequests: 1, windowMs: 60_000, trustProxy: true },
         onMintFailure: vi.fn(),
       });
 

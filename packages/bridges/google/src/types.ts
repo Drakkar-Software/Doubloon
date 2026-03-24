@@ -10,6 +10,8 @@ export interface BridgeResult {
 export interface GoogleBridgeConfig {
   packageName: string;
   serviceAccountKey: string;
+  /** Environment override. Defaults to 'production'. Test notifications always use 'sandbox'. */
+  environment?: 'production' | 'sandbox';
   productResolver: import('@doubloon/storage').StoreProductResolver;
   walletResolver: import('@doubloon/auth').WalletResolver;
   logger?: import('@doubloon/core').Logger;

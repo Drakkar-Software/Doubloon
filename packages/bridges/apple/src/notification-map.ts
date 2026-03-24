@@ -38,7 +38,10 @@ export function mapAppleNotificationType(
     case 'TEST':
       return 'test';
     default:
-      return 'test';
+      throw new Error(
+        `Unknown Apple notification type: "${appleType}"${appleSubtype ? ` (subtype: "${appleSubtype}")` : ''}. ` +
+        `Update mapAppleNotificationType to handle this type.`,
+      );
   }
 }
 

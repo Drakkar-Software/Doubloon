@@ -111,9 +111,7 @@ export class MobileSolanaChecker implements ChainReader {
         : null;
     }
 
-    const batch = checkEntitlements(entitlements);
-    batch.user = wallet;
-    return batch;
+    return checkEntitlements(entitlements, new Date(), wallet);
   }
 
   async getEntitlement(productId: string, wallet: string): Promise<Entitlement | null> {

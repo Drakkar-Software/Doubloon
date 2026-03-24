@@ -5,7 +5,14 @@
  */
 
 export interface RateLimiterStore {
-  /** Record a hit and return the current count within the window. */
+  /**
+   * Atomically record a hit and return the current count within the window.
+   *
+   * Implementations MUST be atomic: the read-increment-return must happen
+   * as a single operation with no interleaving. For Redis, use INCR + PEXPIRE
+   * in a pipeline or Lua script. The in-memory default is naturally atomic
+   * because JS is single-threaded and this method has no await gaps.
+   */
   hit(key: string, windowMs: number): Promise<number>;
 }
 
@@ -18,6 +25,17 @@ export interface RateLimiterConfig {
   store?: RateLimiterStore;
   /** Key extractor. Receives the request and returns a rate limit key (e.g., IP). */
   keyExtractor?: (req: { headers: Record<string, string> }) => string;
+  /**
+   * Whether the server sits behind a trusted reverse proxy.
+   * When `true`, x-forwarded-for and x-real-ip headers are trusted for IP extraction.
+   * When `false` (default), proxy headers are ignored and the rate limiter uses
+   * a generic key — you should provide a custom `keyExtractor` that uses the
+   * socket remote address from your HTTP framework.
+   *
+   * WARNING: Setting this to `true` without a trusted proxy in front allows
+   * clients to spoof their IP and bypass rate limiting entirely.
+   */
+  trustProxy?: boolean;
 }
 
 export interface RateLimiter {
@@ -62,12 +80,17 @@ export class MemoryRateLimiterStore implements RateLimiterStore {
 
 /**
  * Create a rate limiter from config.
+ * Defaults to 60 requests per minute with in-memory storage.
+ *
+ * @param config - Optional configuration with max requests, window duration, and custom storage
+ * @returns A rate limiter that checks whether requests should be allowed
  */
 export function createRateLimiter(config?: RateLimiterConfig): RateLimiter {
   const maxRequests = config?.maxRequests ?? 60;
   const windowMs = config?.windowMs ?? 60_000;
   const store = config?.store ?? new MemoryRateLimiterStore();
-  const keyExtractor = config?.keyExtractor ?? defaultKeyExtractor;
+  const trustProxy = config?.trustProxy ?? false;
+  const keyExtractor = config?.keyExtractor ?? ((req: { headers: Record<string, string> }) => defaultKeyExtractor(req, trustProxy));
 
   return {
     async check(req: { headers: Record<string, string> }): Promise<boolean> {
@@ -78,11 +101,16 @@ export function createRateLimiter(config?: RateLimiterConfig): RateLimiter {
   };
 }
 
-function defaultKeyExtractor(req: { headers: Record<string, string> }): string {
-  // Use x-forwarded-for (first IP), x-real-ip, or fall back to a generic key
-  const forwarded = req.headers['x-forwarded-for'];
-  if (forwarded) return `rl:${forwarded.split(',')[0].trim()}`;
-  const realIp = req.headers['x-real-ip'];
-  if (realIp) return `rl:${realIp}`;
+function defaultKeyExtractor(req: { headers: Record<string, string> }, trustProxy: boolean): string {
+  if (trustProxy) {
+    // Only trust proxy headers when explicitly configured — prevents IP spoofing
+    const forwarded = req.headers['x-forwarded-for'];
+    if (forwarded) return `rl:${forwarded.split(',')[0].trim()}`;
+    const realIp = req.headers['x-real-ip'];
+    if (realIp) return `rl:${realIp}`;
+  }
+  // Without a trusted proxy, we can't reliably extract the client IP from headers.
+  // Fall back to a generic key. For per-IP limiting, provide a custom keyExtractor
+  // that uses req.socket.remoteAddress from your HTTP framework.
   return 'rl:unknown';
 }

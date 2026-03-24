@@ -9,50 +9,94 @@ import { U8_TO_ENTITLEMENT_SOURCE } from '@doubloon/core';
 import { PublicKey } from '@solana/web3.js';
 
 function readPubkey(data: Buffer, offset: number): string {
+  if (offset + 32 > data.length) {
+    throw new Error(`Buffer overflow: cannot read 32-byte pubkey at offset ${offset} in ${data.length}-byte buffer`);
+  }
   const bytes = data.subarray(offset, offset + 32);
   const pubkey = new PublicKey(bytes);
   return pubkey.toBase58();
 }
 
 function readI64(data: Buffer, offset: number): number {
+  if (offset + 8 > data.length) {
+    throw new Error(`Buffer overflow: cannot read 8-byte i64 at offset ${offset} in ${data.length}-byte buffer`);
+  }
   return Number(data.readBigInt64LE(offset));
 }
 
 function readU64(data: Buffer, offset: number): number {
+  if (offset + 8 > data.length) {
+    throw new Error(`Buffer overflow: cannot read 8-byte u64 at offset ${offset} in ${data.length}-byte buffer`);
+  }
   return Number(data.readBigUInt64LE(offset));
 }
 
 function readU16(data: Buffer, offset: number): number {
+  if (offset + 2 > data.length) {
+    throw new Error(`Buffer overflow: cannot read 2-byte u16 at offset ${offset} in ${data.length}-byte buffer`);
+  }
   return data.readUInt16LE(offset);
 }
 
 function readU32(data: Buffer, offset: number): number {
+  if (offset + 4 > data.length) {
+    throw new Error(`Buffer overflow: cannot read 4-byte u32 at offset ${offset} in ${data.length}-byte buffer`);
+  }
   return data.readUInt32LE(offset);
 }
 
 function readBool(data: Buffer, offset: number): boolean {
+  if (offset >= data.length) {
+    throw new Error(`Buffer overflow: cannot read 1-byte bool at offset ${offset} in ${data.length}-byte buffer`);
+  }
   return data[offset] !== 0;
 }
 
 function readU8(data: Buffer, offset: number): number {
+  if (offset >= data.length) {
+    throw new Error(`Buffer overflow: cannot read 1-byte u8 at offset ${offset} in ${data.length}-byte buffer`);
+  }
   return data[offset];
 }
 
+const MAX_STRING_LENGTH = 1_000_000; // 1 MB max string
+
 function readString(data: Buffer, offset: number): { value: string; bytesRead: number } {
+  if (offset + 4 > data.length) {
+    throw new Error(`Buffer overflow: cannot read string length at offset ${offset} in ${data.length}-byte buffer`);
+  }
   const len = data.readUInt32LE(offset);
+  if (len > MAX_STRING_LENGTH) {
+    throw new Error(`String length ${len} exceeds maximum ${MAX_STRING_LENGTH}`);
+  }
+  if (offset + 4 + len > data.length) {
+    throw new Error(`Buffer overflow: string of length ${len} would exceed buffer bounds at offset ${offset}`);
+  }
   const value = data.subarray(offset + 4, offset + 4 + len).toString('utf-8');
   return { value, bytesRead: 4 + len };
 }
 
 function readProductId(data: Buffer, offset: number): string {
+  if (offset + 32 > data.length) {
+    throw new Error(`Buffer overflow: cannot read 32-byte productId at offset ${offset} in ${data.length}-byte buffer`);
+  }
   return data.subarray(offset, offset + 32).toString('hex');
 }
 
+const MAX_TIMESTAMP_SECONDS = 253_402_300_799; // Year 9999
+
 function i64ToDate(ts: number): Date | null {
-  return ts === 0 ? null : new Date(ts * 1000);
+  if (ts === 0) return null;
+  if (ts < 0 || ts > MAX_TIMESTAMP_SECONDS) {
+    throw new Error(`Timestamp ${ts} is out of valid range`);
+  }
+  return new Date(ts * 1000);
 }
 
 function i64ToDateNonNull(ts: number): Date {
+  if (ts < 0 || ts > MAX_TIMESTAMP_SECONDS) {
+    throw new Error(`Timestamp ${ts} is out of valid range`);
+  }
   return new Date(ts * 1000);
 }
 

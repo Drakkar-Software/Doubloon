@@ -44,9 +44,18 @@ export interface StoreProductResolver {
   resolveStoreSku(productId: string, store: Store): Promise<string[] | null>;
 }
 
+/**
+ * Default implementation of StoreProductResolver.
+ * Builds a reverse index from metadata to map store SKUs to on-chain product IDs.
+ * Results are cached to avoid rebuilding the index on every resolution.
+ */
 export class DefaultStoreProductResolver implements StoreProductResolver {
   private reverseIndex: Map<string, string> | null = null;
 
+  /**
+   * @param metadataStore - Metadata store for product information
+   * @param cache - Optional cache adapter for storing SKU-to-productId mappings
+   */
   constructor(
     private metadataStore: MetadataStore,
     private cache?: CacheAdapter,
@@ -80,6 +89,14 @@ export class DefaultStoreProductResolver implements StoreProductResolver {
     }
   }
 
+  /**
+   * Resolve an on-chain product ID from a store-specific SKU.
+   * Results are cached with a 5-minute TTL.
+   *
+   * @param store - Store type (apple, google, stripe, x402)
+   * @param storeSku - Store-specific product/price ID
+   * @returns On-chain product ID hex string, or null if not mapped
+   */
   async resolveProductId(store: Store, storeSku: string): Promise<string | null> {
     const cacheKey = `sku:${store}:${storeSku}`;
     if (this.cache) {
@@ -95,6 +112,15 @@ export class DefaultStoreProductResolver implements StoreProductResolver {
     return productId;
   }
 
+  /**
+   * Resolve store-specific SKUs from an on-chain product ID.
+   * Returns an array because a single product may be mapped to multiple SKUs
+   * in the same store (e.g., multiple Google subscription IDs).
+   *
+   * @param productId - On-chain product ID hex string
+   * @param store - Store type (apple, google, stripe, x402)
+   * @returns Array of store-specific SKUs, or null if no mapping exists
+   */
   async resolveStoreSku(productId: string, store: Store): Promise<string[] | null> {
     const product = await this.metadataStore.getProduct(productId);
     if (!product) return null;

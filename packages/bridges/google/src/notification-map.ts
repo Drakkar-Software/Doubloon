@@ -15,7 +15,10 @@ export function mapGoogleNotificationType(rtdnType: number): NotificationType {
     case 11: return 'resume';                // PAUSE_SCHEDULE_CHANGED
     case 12: return 'revocation';            // REVOKED
     case 13: return 'expiration';            // EXPIRED
-    default: return 'test';
+    default: throw new Error(
+      `Unknown Google RTDN notification type: ${rtdnType}. ` +
+      `Update mapGoogleNotificationType to handle this type.`,
+    );
   }
 }
 

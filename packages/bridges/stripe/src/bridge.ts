@@ -54,8 +54,8 @@ export class StripeBridge {
         bodyStr,
         signature,
         this.config.webhookSecret,
-      );
-      event = verified as unknown as StripeWebhookEvent;
+      ) as unknown as StripeWebhookEvent;
+      event = verified;
     } catch (err) {
       throw new DoubloonError(
         'INVALID_SIGNATURE',
@@ -93,7 +93,10 @@ export class StripeBridge {
       if (resolved) {
         productId = resolved;
       } else {
-        this.logger.warn('Unknown Stripe price ID', { priceId, eventType: event.type });
+        throw new DoubloonError(
+          'PRODUCT_NOT_MAPPED',
+          `Stripe priceId "${priceId}" has no on-chain mapping`,
+        );
       }
     }
 
@@ -112,6 +115,11 @@ export class StripeBridge {
         `No wallet found for Stripe event ${event.id}. ` +
         `Set metadata.wallet on the subscription/customer or link via WalletResolver.`,
       );
+    }
+
+    // Validate wallet address format
+    if (!this.isValidWalletAddress(userWallet)) {
+      throw new DoubloonError('WALLET_NOT_LINKED', `Invalid wallet address format: ${userWallet}`);
     }
 
     const currentPeriodEnd = obj.current_period_end as number | undefined;
@@ -205,5 +213,19 @@ export class StripeBridge {
       default:
         return null;
     }
+  }
+
+  private isValidWalletAddress(address: string): boolean {
+    // Check if it's a valid Solana address (base58, 32-44 chars) or Ethereum address (42 chars starting with 0x)
+    if (!address || typeof address !== 'string') return false;
+    // Solana address: base58, typically 32-44 characters
+    if (/^[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{32,44}$/.test(address)) {
+      return true;
+    }
+    // Ethereum/EVM address: 0x followed by 40 hex characters
+    if (/^0x[0-9a-fA-F]{40}$/.test(address)) {
+      return true;
+    }
+    return false;
   }
 }

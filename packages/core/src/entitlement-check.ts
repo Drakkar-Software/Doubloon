@@ -7,6 +7,9 @@ import type { Entitlement, EntitlementCheck, EntitlementCheckBatch } from './typ
  * @param entitlement - The on-chain entitlement data, or null if PDA not found.
  * @param now - Current timestamp. Defaults to Date.now(). Pass explicitly for testing.
  * @returns EntitlementCheck with entitled boolean, reason, and cache TTL hint.
+ * @example
+ * const check = checkEntitlement(entitlement);
+ * if (check.entitled) { // user has access }
  */
 export function checkEntitlement(
   entitlement: Entitlement | null,
@@ -71,11 +74,16 @@ export function checkEntitlement(
  *
  * @param entitlements - Map of productId to Entitlement (or null if not found).
  * @param now - Current timestamp for consistent checking across the batch.
+ * @param wallet - User's wallet address (optional, for logging/context).
  * @returns EntitlementCheckBatch with results for each product.
+ * @example
+ * const batch = checkEntitlements({ product1: ent1, product2: null });
+ * for (const [pid, check] of Object.entries(batch.results)) { ... }
  */
 export function checkEntitlements(
   entitlements: Record<string, Entitlement | null>,
   now: Date = new Date(),
+  wallet: string = '',
 ): EntitlementCheckBatch {
   const results: Record<string, EntitlementCheck> = {};
   for (const [productId, entitlement] of Object.entries(entitlements)) {
@@ -83,7 +91,7 @@ export function checkEntitlements(
   }
   return {
     results,
-    user: '',
+    user: wallet,
     checkedAt: now,
   };
 }

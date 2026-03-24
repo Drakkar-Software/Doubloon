@@ -10,6 +10,12 @@ export interface CacheAdapter {
 
 /**
  * In-memory cache with TTL. Ships with @doubloon/storage (zero deps).
+ *
+ * Features:
+ * - Automatic TTL-based expiration
+ * - LRU-style eviction when maxEntries is exceeded
+ * - Background cleanup timer to purge expired entries
+ * - Configurable cleanup interval and max capacity
  */
 export class MemoryCacheAdapter implements CacheAdapter {
   private store = new Map<string, { value: unknown; expiresAt: number }>();

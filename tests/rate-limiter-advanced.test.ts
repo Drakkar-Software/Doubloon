@@ -48,7 +48,7 @@ describe('Rate limiter IP extraction', () => {
   });
 
   it('different IPs have independent limits', async () => {
-    const limiter = createRateLimiter({ maxRequests: 1 });
+    const limiter = createRateLimiter({ maxRequests: 1, trustProxy: true });
 
     expect(await limiter.check({ headers: { 'x-real-ip': '1.1.1.1' } })).toBe(true);
     expect(await limiter.check({ headers: { 'x-real-ip': '2.2.2.2' } })).toBe(true);
@@ -57,7 +57,7 @@ describe('Rate limiter IP extraction', () => {
   });
 
   it('x-forwarded-for takes precedence over x-real-ip', async () => {
-    const limiter = createRateLimiter({ maxRequests: 1 });
+    const limiter = createRateLimiter({ maxRequests: 1, trustProxy: true });
 
     expect(await limiter.check({ headers: { 'x-forwarded-for': '1.2.3.4', 'x-real-ip': '5.6.7.8' } })).toBe(true);
     // Same x-forwarded-for → blocked

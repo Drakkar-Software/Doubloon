@@ -102,15 +102,17 @@ describe('jsonRpcBatch', () => {
   });
 
   it('sorts results by id to match input order', async () => {
-    // Return results in reverse order to test sorting
-    globalThis.fetch = vi.fn().mockResolvedValue({
-      ok: true,
-      status: 200,
-      json: async () => [
-        { jsonrpc: '2.0', id: 1002, result: 'second' },
-        { jsonrpc: '2.0', id: 1001, result: 'first' },
-        { jsonrpc: '2.0', id: 1003, result: 'third' },
-      ],
+    // Capture the IDs that jsonRpcBatch assigns, then return them shuffled
+    let capturedBatch: Array<{ id: number }> = [];
+    globalThis.fetch = vi.fn().mockImplementation(async (_url: string, opts: { body: string }) => {
+      capturedBatch = JSON.parse(opts.body);
+      // Return results in reverse order to test sorting
+      const responses = [
+        { jsonrpc: '2.0', id: capturedBatch[1].id, result: 'second' },
+        { jsonrpc: '2.0', id: capturedBatch[0].id, result: 'first' },
+        { jsonrpc: '2.0', id: capturedBatch[2].id, result: 'third' },
+      ];
+      return { ok: true, status: 200, json: async () => responses };
     }) as any;
 
     const results = await jsonRpcBatch<string>('https://rpc.test', [
@@ -119,7 +121,11 @@ describe('jsonRpcBatch', () => {
       { method: 'c', params: [] },
     ]);
 
-    expect(results).toEqual(['first', 'second', 'third']);
+    expect(results).toEqual([
+      { ok: true, value: 'first' },
+      { ok: true, value: 'second' },
+      { ok: true, value: 'third' },
+    ]);
   });
 
   it('batch HTTP error → RPC_ERROR', async () => {
@@ -130,19 +136,28 @@ describe('jsonRpcBatch', () => {
     ])).rejects.toMatchObject({ code: 'RPC_ERROR' });
   });
 
-  it('one error in batch → throws on that item', async () => {
-    globalThis.fetch = vi.fn().mockResolvedValue({
-      ok: true,
-      status: 200,
-      json: async () => [
-        { jsonrpc: '2.0', id: 2001, result: 'ok' },
-        { jsonrpc: '2.0', id: 2002, error: { code: -32000, message: 'Account not found' } },
-      ],
+  it('one error in batch → returns per-item results', async () => {
+    globalThis.fetch = vi.fn().mockImplementation(async (_url: string, opts: { body: string }) => {
+      const batch = JSON.parse(opts.body);
+      const responses = [
+        { jsonrpc: '2.0', id: batch[0].id, result: 'ok' },
+        { jsonrpc: '2.0', id: batch[1].id, error: { code: -32000, message: 'Account not found' } },
+      ];
+      return { ok: true, status: 200, json: async () => responses };
     }) as any;
 
-    await expect(jsonRpcBatch('https://rpc.test', [
+    const results = await jsonRpcBatch('https://rpc.test', [
       { method: 'a', params: [] },
       { method: 'b', params: [] },
-    ])).rejects.toMatchObject({ code: 'RPC_ERROR' });
+    ]);
+
+    expect(results).toEqual([
+      { ok: true, value: 'ok' },
+      { ok: false, error: expect.any(Error) },
+    ]);
+    expect(results[1].ok).toBe(false);
+    if (!results[1].ok) {
+      expect(results[1].error.message).toContain('-32000');
+    }
   });
 });

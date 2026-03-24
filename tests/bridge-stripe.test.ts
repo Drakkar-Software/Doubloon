@@ -27,7 +27,7 @@ describe('Stripe event type mapping', () => {
   });
 
   it('unknown event → test', () => {
-    expect(mapStripeEventType('totally.unknown.event')).toBe('test');
+    expect(() => mapStripeEventType('totally.unknown.event')).toThrow();
   });
 
   describe('customer.subscription.updated with previousAttributes', () => {

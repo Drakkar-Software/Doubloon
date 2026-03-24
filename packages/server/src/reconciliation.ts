@@ -32,9 +32,23 @@ export interface ReconciliationReport {
   errors: Array<{ subscriptionId: string; error: Error }>;
 }
 
+/**
+ * Create a reconciliation runner for syncing on-chain state with store records.
+ * Used for periodic consistency checks and recovery from past gaps.
+ *
+ * @param config - Configuration with chain writer, signer, and optional retry settings
+ * @returns A reconciliation runner with a run method
+ */
 export function createReconciliationRunner(config: ReconciliationConfig) {
   const logger = config.logger ?? nullLogger;
 
+  /**
+   * Run reconciliation across a batch of subscription items.
+   * Continues on errors (reports them separately) to process all items.
+   *
+   * @param items - Items to reconcile (from store with current on-chain state)
+   * @returns Report with counts and error details
+   */
   async function run(items: ReconciliationItem[]): Promise<ReconciliationReport> {
     const report: ReconciliationReport = {
       checked: 0,
@@ -55,10 +69,11 @@ export function createReconciliationRunner(config: ReconciliationConfig) {
         if (!result.instruction) continue;
 
         if (isMintInstruction(result.instruction)) {
+          const mint = result.instruction;
           const mintResult = await mintWithRetry(
             config.writer,
             config.signer,
-            result.instruction as MintInstruction,
+            mint,
             config.mintRetry,
           );
           if (mintResult.success) {
@@ -66,7 +81,7 @@ export function createReconciliationRunner(config: ReconciliationConfig) {
             logger.info('Reconciliation: minted', { subscriptionId: item.subscriptionId });
           }
         } else {
-          const revoke = result.instruction as RevokeInstruction;
+          const revoke = result.instruction;
           if (config.writer.revokeEntitlement) {
             const tx = await config.writer.revokeEntitlement({
               ...revoke,

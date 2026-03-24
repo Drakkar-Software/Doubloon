@@ -39,9 +39,7 @@ export class LocalChainReader {
     for (const productId of productIds) {
       entitlements[productId] = this.#store.getEntitlement(productId, wallet);
     }
-    const batch = checkEntitlements(entitlements);
-    batch.user = wallet;
-    return batch;
+    return checkEntitlements(entitlements, new Date(), wallet);
   }
 
   async isEntitled(productId: string, wallet: string): Promise<boolean> {

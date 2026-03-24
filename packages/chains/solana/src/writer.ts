@@ -32,7 +32,22 @@ function anchorDiscriminator(name: string): Buffer {
   return disc;
 }
 
-// TODO: Integrate Anchor Program.methods for building instructions; transactions currently use manual serialization
+/**
+ * Solana on-chain writer for Doubloon entitlements and delegations.
+ *
+ * Builds transactions to mint/revoke entitlements, register products, and manage delegations.
+ * Transactions are ready to be signed and sent via a ChainSigner.
+ *
+ * @example
+ * const writer = new DoubloonSolanaWriter({
+ *   rpcUrl: 'https://api.mainnet-beta.solana.com',
+ *   programId: 'DubNXFKzDiniBDcCTUzApxvwkd5fuwF8VVZZ6sDj7JJM',
+ * });
+ * const tx = await writer.mintEntitlement({ productId, user, source, sourceId, signer });
+ * const signature = await signer.signAndSend(tx);
+ *
+ * TODO: Integrate Anchor Program.methods for building instructions; transactions currently use manual serialization
+ */
 export class DoubloonSolanaWriter {
   readonly connection: Connection;
   private programId: PublicKey;
@@ -44,6 +59,12 @@ export class DoubloonSolanaWriter {
     this.logger = config.logger ?? nullLogger;
   }
 
+  /**
+   * Build a transaction to register a new product on-chain.
+   *
+   * @param params - Product details: slug, name, metadata URI, default duration, and creator wallet
+   * @returns Transaction ready to sign and send, plus the derived product ID (hex string)
+   */
   async registerProduct(params: {
     slug: string;
     name: string;
@@ -95,6 +116,12 @@ export class DoubloonSolanaWriter {
     return { transaction: tx, productId: productIdHex };
   }
 
+  /**
+   * Build a transaction to mint an entitlement for a user.
+   *
+   * @param params - Mint instruction with product ID, user wallet, expiration, source info, and signer
+   * @returns Transaction ready to sign and send
+   */
   async mintEntitlement(params: MintInstruction & {
     signer: string;
     autoRenew?: boolean;
@@ -143,6 +170,12 @@ export class DoubloonSolanaWriter {
     return tx;
   }
 
+  /**
+   * Build a transaction to extend an existing entitlement's expiration.
+   *
+   * @param params - Details: product ID, user wallet, new expiration, source, and signer
+   * @returns Transaction ready to sign and send
+   */
   async extendEntitlement(params: {
     productId: string;
     user: string;
@@ -184,6 +217,12 @@ export class DoubloonSolanaWriter {
     return tx;
   }
 
+  /**
+   * Build a transaction to revoke an entitlement.
+   *
+   * @param params - Revoke instruction with product ID, user wallet, reason, and signer
+   * @returns Transaction ready to sign and send
+   */
   async revokeEntitlement(params: RevokeInstruction & {
     signer: string;
   }): Promise<Transaction> {
@@ -216,6 +255,13 @@ export class DoubloonSolanaWriter {
     return tx;
   }
 
+  /**
+   * Build multiple mint transactions, batching instructions to stay within Solana transaction limits.
+   * Up to 3 mint instructions per transaction to remain under size and account limits.
+   *
+   * @param params - Array of mint instructions and signer
+   * @returns Array of transactions, each ready to sign and send
+   */
   async batchMintEntitlements(params: {
     mints: MintInstruction[];
     signer: string;
@@ -223,6 +269,10 @@ export class DoubloonSolanaWriter {
   }): Promise<Transaction[]> {
     if (params.mints.length === 0) return [];
 
+    // Each mintEntitlement instruction requires 7 accounts + ~120 bytes of data.
+    // Solana transactions are capped at 1232 bytes and 64 unique accounts.
+    // With 3 mints per tx we stay safely under both limits even with long sourceId
+    // strings, while still batching for efficiency. Increase cautiously.
     const MINTS_PER_TX = 3;
     const transactions: Transaction[] = [];
 
@@ -250,6 +300,12 @@ export class DoubloonSolanaWriter {
     return transactions;
   }
 
+  /**
+   * Build a transaction to grant mint delegation to another wallet.
+   *
+   * @param params - Delegate details: product ID, delegate wallet, optional expiration and max mints count, and signer
+   * @returns Transaction ready to sign and send
+   */
   async grantDelegation(params: {
     productId: string;
     delegate: string;
@@ -288,6 +344,12 @@ export class DoubloonSolanaWriter {
     return tx;
   }
 
+  /**
+   * Build a transaction to revoke mint delegation from a wallet.
+   *
+   * @param params - Product ID, delegate wallet, and signer
+   * @returns Transaction ready to sign and send
+   */
   async revokeDelegation(params: {
     productId: string;
     delegate: string;

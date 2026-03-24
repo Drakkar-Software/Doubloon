@@ -23,7 +23,7 @@ describe('mapStripeEventType', () => {
   });
 
   it('maps unknown event types to test', () => {
-    expect(mapStripeEventType('some.unknown.event')).toBe('test');
+    expect(() => mapStripeEventType('some.unknown.event')).toThrow();
   });
 
   describe('customer.subscription.updated sub-cases', () => {

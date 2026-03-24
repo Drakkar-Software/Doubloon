@@ -21,7 +21,7 @@ function makeAppleBridge(overrides?: {
       resolveStoreSku: async () => null,
     },
     walletResolver: {
-      resolveWallet: overrides?.resolveWallet ?? (async () => '0xAlice'),
+      resolveWallet: overrides?.resolveWallet ?? (async () => '0xA11ceA11ceA11ceA11ceA11ceA11ceA11ceA11ce'),
       linkWallet: async () => {},
     },
   });
@@ -56,7 +56,11 @@ describe('Apple notification type mapping', () => {
 
   for (const [appleType, subtype, expected] of cases) {
     it(`${appleType}/${subtype ?? 'none'} → ${expected}`, () => {
-      expect(mapAppleNotificationType(appleType, subtype)).toBe(expected);
+      if (appleType === 'UNKNOWN_TYPE') {
+        expect(() => mapAppleNotificationType(appleType, subtype)).toThrow();
+      } else {
+        expect(mapAppleNotificationType(appleType, subtype)).toBe(expected);
+      }
     });
   }
 });
@@ -189,7 +193,7 @@ describe('AppleBridge.handleNotification', () => {
     const bridge = makeAppleBridge({
       resolveWallet: async (_store, userId) => {
         resolvedCalls.push(userId);
-        if (userId === 'app-token-123') return '0xFromAppToken';
+        if (userId === 'app-token-123') return '0xaaaa000000000000000000000000000000000001';
         return null;
       },
     });
@@ -207,13 +211,13 @@ describe('AppleBridge.handleNotification', () => {
     const result = await bridge.handleNotification({}, body);
     // Should resolve from appAccountToken first
     expect(resolvedCalls[0]).toBe('app-token-123');
-    expect(result.notification.userWallet).toBe('0xFromAppToken');
+    expect(result.notification.userWallet).toBe('0xaaaa000000000000000000000000000000000001');
   });
 
   it('wallet resolution falls back to originalTransactionId', async () => {
     const bridge = makeAppleBridge({
       resolveWallet: async (_store, userId) => {
-        if (userId === 'orig-txn') return '0xFromOrig';
+        if (userId === 'orig-txn') return '0xaaaa000000000000000000000000000000000002';
         return null;
       },
     });
@@ -228,7 +232,7 @@ describe('AppleBridge.handleNotification', () => {
     }));
 
     const result = await bridge.handleNotification({}, body);
-    expect(result.notification.userWallet).toBe('0xFromOrig');
+    expect(result.notification.userWallet).toBe('0xaaaa000000000000000000000000000000000002');
   });
 
   it('null wallet produces null instruction', async () => {
@@ -244,8 +248,9 @@ describe('AppleBridge.handleNotification', () => {
       },
     }));
 
-    const result = await bridge.handleNotification({}, body);
-    expect(result.instruction).toBeNull();
+    await expect(bridge.handleNotification({}, body)).rejects.toMatchObject({
+      code: 'WALLET_NOT_LINKED',
+    });
   });
 
   it('autoRenew is true for non-cancellation with autoRenewStatus != 0', async () => {

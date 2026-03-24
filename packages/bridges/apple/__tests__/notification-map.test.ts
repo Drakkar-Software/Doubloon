@@ -39,7 +39,7 @@ describe('mapAppleNotificationType', () => {
     expect(mapAppleNotificationType('TEST')).toBe('test');
   });
   it('unknown → test', () => {
-    expect(mapAppleNotificationType('UNKNOWN_TYPE')).toBe('test');
+    expect(() => mapAppleNotificationType('UNKNOWN_TYPE')).toThrow();
   });
   it('DID_CHANGE_RENEWAL_INFO + UPGRADE → plan_change', () => {
     expect(mapAppleNotificationType('DID_CHANGE_RENEWAL_INFO', 'UPGRADE')).toBe('plan_change');

@@ -17,7 +17,7 @@ function makeGoogleBridge(overrides?: {
       resolveStoreSku: async () => null,
     },
     walletResolver: {
-      resolveWallet: overrides?.resolveWallet ?? (async () => '0xAlice'),
+      resolveWallet: overrides?.resolveWallet ?? (async () => '0xA11ceA11ceA11ceA11ceA11ceA11ceA11ceA11ce'),
       linkWallet: async () => {},
     },
   });
@@ -59,7 +59,11 @@ describe('Google notification type mapping (all 13 codes)', () => {
 
   for (const [code, expected] of cases) {
     it(`code ${code} → ${expected}`, () => {
-      expect(mapGoogleNotificationType(code)).toBe(expected);
+      if (expected === 'test') {
+        expect(() => mapGoogleNotificationType(code)).toThrow();
+      } else {
+        expect(mapGoogleNotificationType(code)).toBe(expected);
+      }
     });
   }
 });

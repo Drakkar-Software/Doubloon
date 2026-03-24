@@ -32,8 +32,12 @@ export function validateSlug(slug: string): void {
  * The derivation is: SHA-256(UTF-8(slug)).
  * Deterministic and collision-resistant.
  *
- * @param slug - Human-readable product slug.
- * @returns 32-byte Uint8Array.
+ * @param slug - Human-readable product slug (validated: 3-64 chars, lowercase alphanumeric with hyphens).
+ * @returns 32-byte Uint8Array of the SHA-256 hash.
+ * @throws DoubloonError if slug validation fails.
+ * @example
+ * const productId = deriveProductId('premium-plan');
+ * // Returns consistent 32-byte hash suitable for on-chain use
  */
 export function deriveProductId(slug: string): Uint8Array {
   validateSlug(slug);

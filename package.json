@@ -9,7 +9,9 @@
     "test": "turbo test",
     "lint": "turbo lint",
     "clean": "turbo clean",
-    "test:e2e": "vitest run --config vitest.e2e.config.ts"
+    "test:e2e": "vitest run --config vitest.e2e.config.ts",
+    "dev": "tsx scripts/run-server.ts",
+    "test:client": "tsx scripts/test-client.ts"
   },
   "devDependencies": {
     "@doubloon/auth": "workspace:*",

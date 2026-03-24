@@ -43,6 +43,11 @@ export class X402Bridge {
    * a mint instruction for the on-chain entitlement.
    */
   async verifyAndMint(receipt: X402PaymentReceipt): Promise<X402BridgeResult> {
+    // Validate wallet address format
+    if (!this.isValidWalletAddress(receipt.wallet)) {
+      throw new DoubloonError('WALLET_NOT_LINKED', `Invalid wallet address format: ${receipt.wallet}`);
+    }
+
     const notificationType = mapX402PaymentType();
 
     // Resolve the on-chain product ID from the receipt's product identifier
@@ -134,5 +139,19 @@ export class X402Bridge {
       durationSeconds: options.durationSeconds,
       description: options.description ?? '',
     };
+  }
+
+  private isValidWalletAddress(address: string): boolean {
+    // Check if it's a valid Solana address (base58, 32-44 chars) or Ethereum address (42 chars starting with 0x)
+    if (!address || typeof address !== 'string') return false;
+    // Solana address: base58, typically 32-44 characters
+    if (/^[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{32,44}$/.test(address)) {
+      return true;
+    }
+    // Ethereum/EVM address: 0x followed by 40 hex characters
+    if (/^0x[0-9a-fA-F]{40}$/.test(address)) {
+      return true;
+    }
+    return false;
   }
 }

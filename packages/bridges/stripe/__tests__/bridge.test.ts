@@ -217,10 +217,9 @@ describe('StripeBridge', () => {
       },
     });
 
-    const result = await callWithSignedEvent(bridge, event);
-    // Stripe bridge logs a warning but doesn't throw; it returns empty productId
-    expect(result.notification.productId).toBe('');
-    expect(result.instruction).toBeNull();
+    await expect(callWithSignedEvent(bridge, event)).rejects.toMatchObject({
+      code: 'PRODUCT_NOT_MAPPED',
+    });
   });
 
   it('rejects requests without stripe-signature header', async () => {

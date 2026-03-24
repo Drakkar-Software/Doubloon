@@ -27,11 +27,11 @@ HTTP 402 (x402) ──┘   Server         └─── EVM Contract
 
 - **Multi-store support** -- Apple App Store, Google Play, Stripe, and the x402 payment protocol, all normalized into a single notification flow.
 - **Multi-chain** -- Solana (Anchor program) and EVM (Solidity contract with ERC-5643 subscription NFTs) out of the box.
-- **Webhook-driven** -- Automatic store detection, signature verification, deduplication, and rate limiting.
-- **Mint with retry** -- Configurable retry with exponential backoff, distinguishing transient RPC errors from permanent failures.
+- **Webhook-driven** -- Automatic store detection, signature verification (Apple JWS x5c chain, Stripe HMAC), atomic deduplication, and configurable rate limiting with proxy trust controls.
+- **Mint with retry** -- Configurable retry with exponential backoff (capped at 2^30 to prevent overflow), distinguishing transient RPC errors from permanent failures.
 - **Reconciliation engine** -- Batch drift detection compares store state against on-chain state and corrects mismatches.
 - **Delegation system** -- Grant third-party wallets scoped minting authority with expiry and mint caps.
-- **SIWS authentication** -- Sign In With Solana message creation, verification with domain binding, and Ed25519 session tokens.
+- **SIWS authentication** -- Sign In With Solana message creation, verification with domain binding, message length limits, and Ed25519 session tokens.
 - **Pluggable storage** -- In-memory, Redis, Postgres, and S3 adapters for metadata, caching, and deduplication.
 - **Local dev chain** -- In-memory chain provider for testing and development without blockchain infrastructure.
 - **On-device entitlement checking** -- Lightweight checkers that query chain RPCs directly from mobile, with no server round-trip. Available as TypeScript (React Native/web), Swift (iOS), and Kotlin (Android).
@@ -708,6 +708,9 @@ pnpm test
 # Run e2e tests (root tests/ folder)
 pnpm test:e2e
 
+# Run advanced experiments (stress tests, fuzz tests)
+pnpm vitest run --config experiments/advanced/vitest.config.ts
+
 # Generate Python types and JSON Schema
 npx tsx scripts/codegen.ts --target all --out generated/
 ```
@@ -747,7 +750,9 @@ packages/
     ios/                 # Native iOS/macOS checker (Swift)
     android/             # Native Android checker (Kotlin)
     python/              # Python client
-tests/                   # E2E integration tests (148 tests across 9 suites)
+experiments/
+  advanced/              # Stress tests, fuzz tests, throughput benchmarks (52 tests)
+tests/                   # E2E integration tests (474 tests across 27 suites)
 scripts/
   deploy-program.ts      # Solana program deployment
   codegen.ts             # Type generation (Python, JSON Schema)

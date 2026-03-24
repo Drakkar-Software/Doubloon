@@ -91,9 +91,7 @@ export class MobileEvmChecker implements ChainReader {
       entitlements[productIds[i]] = checks[i];
     }
 
-    const batch = checkEntitlements(entitlements);
-    batch.user = wallet;
-    return batch;
+    return checkEntitlements(entitlements, new Date(), wallet);
   }
 
   /**

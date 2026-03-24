@@ -39,7 +39,7 @@ describe('X402Bridge', () => {
   it('verifyAndMint produces a notification and mint instruction', async () => {
     const result = await bridge.verifyAndMint({
       paymentId: 'pay_abc',
-      wallet: '0x1234',
+      wallet: '0x1234567890abcdef1234567890abcdef12345678',
       productId: 'my-product',
       amountUsd: 9.99,
       durationSeconds: 2592000,
@@ -48,9 +48,9 @@ describe('X402Bridge', () => {
 
     expect(result.notification.type).toBe('initial_purchase');
     expect(result.notification.store).toBe('x402');
-    expect(result.notification.userWallet).toBe('0x1234');
+    expect(result.notification.userWallet).toBe('0x1234567890abcdef1234567890abcdef12345678');
     expect(result.notification.productId).toBe('on-chain-product-id-hex');
-    expect(result.instruction.user).toBe('0x1234');
+    expect(result.instruction.user).toBe('0x1234567890abcdef1234567890abcdef12345678');
     expect(result.instruction.productId).toBe('on-chain-product-id-hex');
     expect(result.instruction.source).toBe('x402');
     expect(result.instruction.sourceId).toBe('pay_abc');
@@ -60,7 +60,7 @@ describe('X402Bridge', () => {
   it('verifyAndMint sets expiresAt to null when durationSeconds is 0', async () => {
     const result = await bridge.verifyAndMint({
       paymentId: 'pay_lifetime',
-      wallet: '0x5678',
+      wallet: '0x5678567856785678567856785678567856785678',
       productId: 'lifetime-product',
       amountUsd: 49.99,
       durationSeconds: 0,
@@ -83,7 +83,7 @@ describe('X402Bridge', () => {
     await expect(
       failBridge.verifyAndMint({
         paymentId: 'pay_fail',
-        wallet: '0xFAIL',
+        wallet: '0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
         productId: 'unknown',
         amountUsd: 1,
         durationSeconds: 60,
