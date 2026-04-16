@@ -1,7 +1,7 @@
 /**
  * Supported entitlement destination backends.
  */
-export type Chain = 'starfish' | 'local';
+export type Chain = 'starfish' | 'local' | 'anchor';
 
 /**
  * Supported payment stores/sources.

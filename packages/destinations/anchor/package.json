@@ -1,7 +1,7 @@
 {
-  "name": "@doubloon/starfish",
-  "version": "0.2.0",
-  "description": "Starfish entitlement destination for Doubloon — reads/writes entitlements via the Starfish sync protocol",
+  "name": "@doubloon/anchor",
+  "version": "0.1.0",
+  "description": "Supabase entitlement destination for Doubloon — stores entitlements as rows with full metadata (expiry, source, revocation)",
   "type": "module",
   "exports": {
     ".": {
@@ -21,10 +21,10 @@
     "@doubloon/core": "workspace:*"
   },
   "peerDependencies": {
-    "@drakkar.software/starfish-client": ">=1.0.0"
+    "@supabase/supabase-js": ">=2.0.0"
   },
   "devDependencies": {
-    "@drakkar.software/starfish-client": "workspace:*",
+    "@supabase/supabase-js": "^2.49.0",
     "@types/node": "^22.0.0",
     "typescript": "^5.6.0",
     "vitest": "^2.1.0"

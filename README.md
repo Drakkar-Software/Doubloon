@@ -31,6 +31,7 @@ Custom Store ─────┘
 | `@doubloon/core` | Shared types, `ProductRegistry`, `WalletResolver`, error codes, utilities |
 | `@doubloon/server` | Webhook handler, `defineConfig`, `createNamespacedServer`, dedup, rate limiter, reconciliation |
 | `@doubloon/starfish` | Starfish entitlement destination — pull-modify-push with OCC retry |
+| `@doubloon/anchor` | Supabase entitlement destination — full rows with expiry, source, revocation |
 | `@doubloon/bridge-apple` | Apple App Store Server Notifications V2 |
 | `@doubloon/bridge-google` | Google Play Real-Time Developer Notifications |
 | `@doubloon/bridge-stripe` | Stripe webhook events with signature verification |
@@ -141,6 +142,86 @@ const features = await pullEntitlements(starfishClient, userId);
 if (features.includes('pro-monthly')) {
   // unlock premium UI
 }
+```
+
+---
+
+## Anchor Destination
+
+`@doubloon/anchor` stores entitlements as rows in a Supabase table with full metadata — expiry, source, revocation. The schema is compatible with [`@drakkar.software/anchor`](https://github.com/Drakkar-Software/Anchor) so client-side Anchor stores can read the same table directly.
+
+```bash
+pnpm add @doubloon/anchor @supabase/supabase-js
+```
+
+```typescript
+import { createClient } from '@supabase/supabase-js';
+import { createAnchorDestination } from '@doubloon/anchor';
+
+const supabase = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_SERVICE_KEY!);
+
+const dest = createAnchorDestination({
+  supabase,
+  products: PRODUCTS,
+  signerKey: 'service-role',
+  // tableName: 'entitlements',  // default
+});
+
+const { serverConfig } = defineConfig({
+  products: PRODUCTS,
+  destination: dest,
+  bridges: { stripe },
+  onMintFailure,
+});
+```
+
+### Entitlement model
+
+Anchor entitlements are full rows. `checkEntitlement` returns all four reasons:
+
+| Reason | When |
+|--------|------|
+| `active` | Row exists, `active=true`, not expired |
+| `expired` | Row exists, `active=true`, `expires_at` in past |
+| `revoked` | Row exists, `active=false` |
+| `not_found` | No row for this product+user |
+
+### Schema
+
+Apply `packages/destinations/anchor/schema.sql` to your Supabase project:
+
+```sql
+CREATE TABLE entitlements (
+  id          UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+  product_id  TEXT        NOT NULL,
+  user_wallet TEXT        NOT NULL,
+  slug        TEXT        NOT NULL,
+  granted_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
+  expires_at  TIMESTAMPTZ,
+  auto_renew  BOOLEAN     NOT NULL DEFAULT false,
+  source      TEXT        NOT NULL,
+  source_id   TEXT        NOT NULL,
+  active      BOOLEAN     NOT NULL DEFAULT true,
+  revoked_at  TIMESTAMPTZ,
+  revoked_by  TEXT,
+  UNIQUE (product_id, user_wallet)
+);
+```
+
+### Client-side reads with Anchor
+
+```typescript
+import { createTableStore } from '@drakkar.software/anchor';
+
+const entitlementsStore = createTableStore({
+  supabase,
+  table: 'entitlements',
+});
+
+const state = entitlementsStore.getState();
+await state.fetch({ filters: [{ column: 'user_wallet', op: 'eq', value: userId }] });
+const rows = entitlementsStore.getState().rows;
+const hasPro = rows.some((r) => r.slug === 'pro-monthly' && r.active);
 ```
 
 ---
@@ -386,6 +467,7 @@ packages/
   server/            — Webhook server, defineConfig, namespaced server, dedup, rate limiter
   destinations/
     starfish/        — Starfish destination (pull-modify-push, OCC retry)
+    anchor/          — Supabase destination (full rows, expiry, revocation)
   bridges/
     apple/           — Apple App Store bridge
     google/          — Google Play bridge

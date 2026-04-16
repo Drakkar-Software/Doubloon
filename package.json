@@ -13,10 +13,10 @@
     "dev": "tsx scripts/run-server.ts"
   },
   "devDependencies": {
+    "@doubloon/anchor": "workspace:*",
     "@doubloon/starfish": "workspace:*",
     "@drakkar.software/starfish-client": "workspace:*",
     "@drakkar.software/starfish-protocol": "workspace:*",
-    "@doubloon/auth": "workspace:*",
     "@doubloon/bridge-apple": "workspace:*",
     "@doubloon/bridge-google": "workspace:*",
     "@doubloon/bridge-stripe": "workspace:*",
@@ -29,6 +29,7 @@
     "eslint-plugin-import": "^2.29.0",
     "prettier": "^3.3.0",
     "tsx": "^4.21.0",
+    "@supabase/supabase-js": "^2.49.0",
     "turbo": "^2.3.0",
     "typescript": "^5.6.0",
     "vitest": "^2.1.0"

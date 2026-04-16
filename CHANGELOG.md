@@ -1,69 +1,34 @@
 # Changelog
 
-All notable changes to this project will be documented in this file.
+## 0.2.0 (2026-04-16)
 
-The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
+### New Packages
 
----
+- **`@doubloon/anchor`** (`packages/destinations/anchor/`) — Supabase entitlement destination. Stores full entitlement rows with expiry, source, and revocation metadata. Anchor-compatible schema lets client-side `@drakkar.software/anchor` stores read the same table. Uses `@supabase/supabase-js` directly for upsert-with-`onConflict` and composite-filter updates.
 
-## [0.1.0] — 2026-04-16
+  Key capabilities vs Starfish:
+  - Four check reasons: `active`, `not_found`, `expired`, `revoked` (Starfish only returns `active`/`not_found`)
+  - Real expiry timestamps persisted per entitlement
+  - Re-subscribing upserts the existing row (reactivates without creating a duplicate)
+  - Revocation stores `revoked_at` and `revoked_by`
 
-Initial release. Starfish-backed entitlement server with multi-store payment bridges.
+  Reference DDL: `packages/destinations/anchor/schema.sql`
 
-### Packages
+### Breaking Changes
 
-| Package | Description |
-|---------|-------------|
-| `@doubloon/core` | Shared types, `ProductRegistry`, error codes, utilities |
-| `@doubloon/server` | Webhook handler, `defineConfig`, `createNamespacedServer`, dedup, rate limiter, reconciliation |
-| `@doubloon/starfish` | Starfish entitlement destination |
-| `@doubloon/auth` | SIWS authentication, session tokens |
-| `@doubloon/bridge-apple` | Apple App Store Server Notifications V2 |
-| `@doubloon/bridge-google` | Google Play Real-Time Developer Notifications |
-| `@doubloon/bridge-stripe` | Stripe webhook events |
-| `@doubloon/bridge-x402` | HTTP 402 Payment Required protocol |
+- **`@doubloon/core`**: `Chain` type extended — `'anchor'` added alongside `'starfish'` and `'local'`.
 
-### Added
+### Other
 
-#### Core (`@doubloon/core`)
-- Shared types: `Chain`, `Store`, `EntitlementSource`, `NotificationType`
-- Domain models: `Platform`, `Product`, `Entitlement`, `MintDelegate`
-- Instruction types: `MintInstruction`, `RevokeInstruction`, `isMintInstruction`
-- `EntitlementCheck`, `EntitlementCheckBatch` result types
-- `checkEntitlement`, `checkEntitlements` pure check functions
-- `deriveProductIdHex` — deterministic SHA-256 product ID from slug
-- `validateSlug` — slug format enforcement (lowercase alphanumeric + hyphens)
-- `ProductRegistry` / `createProductRegistry` — bidirectional slug ↔ productId mapping
-- `DoubloonError` with typed error codes and retryable flag
-- `nullLogger` and `Logger` interface
+- Root `package.json`: removed stale `@doubloon/auth` workspace reference, added `@supabase/supabase-js` dev dependency.
+- 19 new e2e tests in `tests/anchor-destination.test.ts` (all 4 check reasons, full lifecycle, mintWithRetry, ProductRegistry).
 
-#### Server (`@doubloon/server`)
-- `createServer` — webhook handler with automatic store detection
-- `ChainWriter` / `ChainSigner` interfaces for destination backends
-- `mintWithRetry` — exponential backoff retry; OCC conflicts retried automatically
-- `MemoryDedupStore` / `DedupStore` — atomic check-and-mark dedup with TTL
-- Rate limiter — sliding window, 60 req/min default, proxy trust controls
-- Reconciliation — `createReconciliationRunner` for batch drift detection and correction
-- `defineConfig` — declarative product + destination + bridge wiring
-- `createNamespacedServer` — one server for multiple apps, URL-routed by namespace
+## 0.1.0 (initial)
 
-#### Starfish Destination (`@doubloon/starfish`)
-- `createStarfishDestination` — factory returning `{ reader, writer, signer, registry }`
-- `StarfishReader` — pulls features via `pullEntitlements()`; synthesizes `Entitlement`
-- `StarfishWriter` — pull-modify-prepare: adds/removes slug, returns `StarfishTransaction`
-- `StarfishSigner` — executes push; maps `ConflictError` (409) to retryable `DoubloonError`
-- Configurable `storagePath` template and `field` name
-
-#### Authentication (`@doubloon/auth`)
-- `createSIWSMessage` / `verifySIWS` — Sign In With Solana
-- `createSessionToken` / `verifySessionToken` — Ed25519 session tokens with TTL and domain binding
-
-#### Payment Bridges
-- `@doubloon/bridge-apple` — Apple App Store Server Notifications V2 (JWS x5c chain verification)
-- `@doubloon/bridge-google` — Google Play Real-Time Developer Notifications (JWT verification)
-- `@doubloon/bridge-stripe` — Stripe webhook events (HMAC signature verification)
+- `@doubloon/core` — shared types, ProductRegistry, WalletResolver, error codes
+- `@doubloon/server` — webhook handler, defineConfig, createNamespacedServer, dedup, rate limiter, reconciliation
+- `@doubloon/starfish` — Starfish destination with pull-modify-push OCC retry
+- `@doubloon/bridge-apple` — Apple App Store Server Notifications V2
+- `@doubloon/bridge-google` — Google Play Real-Time Developer Notifications
+- `@doubloon/bridge-stripe` — Stripe webhook events with signature verification
 - `@doubloon/bridge-x402` — HTTP 402 Payment Required protocol
-
-#### Testing
-- 9 e2e test suites, 161 tests: Starfish lifecycle and OCC retry, defineConfig validation,
-  namespace routing and isolation, bridge parsing and signature verification, dedup, rate limiter
