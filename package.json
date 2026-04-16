@@ -14,6 +14,9 @@
     "test:client": "tsx scripts/test-client.ts"
   },
   "devDependencies": {
+    "@doubloon/starfish": "workspace:*",
+    "@drakkar.software/starfish-client": "workspace:*",
+    "@drakkar.software/starfish-protocol": "workspace:*",
     "@doubloon/auth": "workspace:*",
     "@doubloon/bridge-apple": "workspace:*",
     "@doubloon/bridge-google": "workspace:*",

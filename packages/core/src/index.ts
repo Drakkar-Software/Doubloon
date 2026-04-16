@@ -32,3 +32,7 @@ export { deriveProductId, deriveProductIdHex, validateSlug } from './product-id.
 
 // Entitlement check
 export { checkEntitlement, checkEntitlements } from './entitlement-check.js';
+
+// Product registry
+export { createProductRegistry } from './product-registry.js';
+export type { ProductRegistry, ProductRegistryEntry } from './product-registry.js';

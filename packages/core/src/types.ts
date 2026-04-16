@@ -1,7 +1,7 @@
 /**
  * Supported blockchain networks.
  */
-export type Chain = 'solana' | 'evm';
+export type Chain = 'solana' | 'evm' | 'starfish';
 
 /**
  * Supported payment stores/sources.

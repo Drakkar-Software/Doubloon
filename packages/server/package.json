@@ -30,7 +30,9 @@
     "@doubloon/bridge-apple": "workspace:*",
     "@doubloon/bridge-google": "workspace:*",
     "@doubloon/bridge-stripe": "workspace:*",
-    "@doubloon/bridge-x402": "workspace:*"
+    "@doubloon/bridge-x402": "workspace:*",
+    "@doubloon/starfish": "workspace:*",
+    "@doubloon/chain-local": "workspace:*"
   },
   "peerDependenciesMeta": {
     "@doubloon/solana": { "optional": true },
@@ -38,6 +40,8 @@
     "@doubloon/bridge-apple": { "optional": true },
     "@doubloon/bridge-google": { "optional": true },
     "@doubloon/bridge-stripe": { "optional": true },
-    "@doubloon/bridge-x402": { "optional": true }
+    "@doubloon/bridge-x402": { "optional": true },
+    "@doubloon/starfish": { "optional": true },
+    "@doubloon/chain-local": { "optional": true }
   }
 }

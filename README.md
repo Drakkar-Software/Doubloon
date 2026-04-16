@@ -7,18 +7,18 @@
 <h1 align="center">Doubloon</h1>
 
 <p align="center">
-  <strong>On-chain entitlements for every payment rail.</strong>
+  <strong>Entitlements for every payment rail and every backend.</strong>
 </p>
 
 <p align="center">
-  Doubloon bridges app store purchases, subscription billing, and open payment protocols to blockchain-native access control. One integration handles Apple, Google, Stripe, and HTTP 402 -- minting tamper-proof entitlements on Solana or EVM chains that your app can check in milliseconds.
+  Doubloon bridges app store purchases, subscription billing, and open payment protocols to your entitlement backend. One integration handles Apple, Google, Stripe, and HTTP 402 — minting tamper-proof entitlements on Solana, EVM chains, or a Starfish document store that your app can check in milliseconds.
 </p>
 
 ```
 Apple App Store ──┐
 Google Play ──────┤                  ┌─── Solana Program
-Stripe Billing ───┼── Doubloon ──────┤
-HTTP 402 (x402) ──┘   Server         └─── EVM Contract
+Stripe Billing ───┼── Doubloon ──────┼─── EVM Contract
+HTTP 402 (x402) ──┘   Server         └─── Starfish (document sync)
 ```
 
 ---
@@ -26,9 +26,12 @@ HTTP 402 (x402) ──┘   Server         └─── EVM Contract
 ## Features
 
 - **Multi-store support** -- Apple App Store, Google Play, Stripe, and the x402 payment protocol, all normalized into a single notification flow.
-- **Multi-chain** -- Solana (Anchor program) and EVM (Solidity contract with ERC-5643 subscription NFTs) out of the box.
+- **Multi-backend** -- Solana (Anchor program), EVM (Solidity contract with ERC-5643 subscription NFTs), and Starfish (document-sync, zero blockchain) out of the box.
+- **Starfish destination** -- Store entitlements as `{ features: ["slug"] }` documents. Pull-modify-push with OCC conflict retry. No blockchain required.
+- **Coded config (`defineConfig`)** -- Declare products, destination, and bridges in one call. Auto-registers products on local stores; works with any destination.
+- **Namespace support** -- One server instance handles multiple apps, each with its own products, destination, and bridges. Shared dedup across namespaces; URL-routed by `/{namespace}/webhook` and `/{namespace}/check/{product}/{wallet}`.
 - **Webhook-driven** -- Automatic store detection, signature verification (Apple JWS x5c chain, Stripe HMAC), atomic deduplication, and configurable rate limiting with proxy trust controls.
-- **Mint with retry** -- Configurable retry with exponential backoff (capped at 2^30 to prevent overflow), distinguishing transient RPC errors from permanent failures.
+- **Mint with retry** -- Configurable retry with exponential backoff (capped at 2^30 to prevent overflow), distinguishing transient RPC errors from permanent failures. OCC conflicts from Starfish push are retried automatically.
 - **Reconciliation engine** -- Batch drift detection compares store state against on-chain state and corrects mismatches.
 - **Delegation system** -- Grant third-party wallets scoped minting authority with expiry and mint caps.
 - **SIWS authentication** -- Sign In With Solana message creation, verification with domain binding, message length limits, and Ed25519 session tokens.
@@ -43,8 +46,9 @@ HTTP 402 (x402) ──┘   Server         └─── EVM Contract
 
 | Package | Description |
 |---------|-------------|
-| `@doubloon/core` | Shared types, error codes, and utilities |
-| `@doubloon/server` | Webhook handler, dedup, rate limiter, mint retry, reconciliation |
+| `@doubloon/core` | Shared types, error codes, `ProductRegistry`, and utilities |
+| `@doubloon/server` | Webhook handler, dedup, rate limiter, mint retry, reconciliation, `defineConfig`, `createNamespacedServer` |
+| `@doubloon/starfish` | Starfish entitlement destination — pull-modify-push via Starfish document-sync protocol |
 | `@doubloon/auth` | SIWS authentication, session tokens, wallet resolver interface |
 | `@doubloon/bridge-apple` | Apple App Store Server Notifications V2 |
 | `@doubloon/bridge-google` | Google Play Real-Time Developer Notifications |
@@ -70,14 +74,71 @@ HTTP 402 (x402) ──┘   Server         └─── EVM Contract
 ### Install
 
 ```bash
+# Starfish destination (recommended for most apps)
+pnpm add @doubloon/server @doubloon/starfish @doubloon/bridge-stripe
+
+# Solana / EVM chain destinations
 pnpm add @doubloon/server @doubloon/bridge-stripe @doubloon/solana
 ```
 
-### Create a Server
+### Create a Server with `defineConfig` (recommended)
+
+`defineConfig` is the easiest way to wire up products, a destination, and bridges in one call. It derives product IDs from slugs and returns a ready-to-use `ServerConfig` and `ProductRegistry`.
+
+**With Starfish:**
+
+```typescript
+import { defineConfig, createServer } from '@doubloon/server';
+import { createStarfishDestination } from '@doubloon/starfish';
+import { StripeBridge } from '@doubloon/bridge-stripe';
+
+const PRODUCTS = [
+  { slug: 'pro-monthly', name: 'Pro Monthly', defaultDuration: 2592000 },
+  { slug: 'lifetime',    name: 'Lifetime',    defaultDuration: 0 },
+];
+
+const dest = createStarfishDestination({
+  client: starfishClient,      // @drakkar.software/starfish-client
+  products: PRODUCTS,
+  signerKey: 'my-admin-key',
+});
+
+const { serverConfig, registry } = defineConfig({
+  products: PRODUCTS,
+  destination: dest,
+  bridges: {
+    stripe: new StripeBridge({ webhookSecret: '...', productResolver, walletResolver }),
+  },
+  onMintFailure: async (instruction, error) => {
+    console.error('Mint failed:', error.message);
+  },
+});
+
+const server = createServer(serverConfig);
+const proId = registry.getProductId('pro-monthly'); // deterministic hex
+```
+
+**With the local in-memory chain (dev/test):**
+
+```typescript
+import { defineConfig, createServer } from '@doubloon/server';
+import { createLocalChain } from '@doubloon/chain-local';
+
+const local = createLocalChain();
+
+const { serverConfig } = defineConfig({
+  products: PRODUCTS,
+  destination: local,          // products auto-registered on local store
+  onMintFailure: async () => {},
+});
+
+const server = createServer(serverConfig);
+```
+
+**Low-level (manual wiring, any chain):**
 
 ```typescript
 import { createServer } from '@doubloon/server';
-import { StripeBridge } from '@doubloon/bridge-stripe';
 import { DoubloonSolanaReader, DoubloonSolanaWriter } from '@doubloon/solana';
 
 const server = createServer({
@@ -86,16 +147,8 @@ const server = createServer({
     writer: new DoubloonSolanaWriter({ rpcUrl: 'https://api.mainnet-beta.solana.com' }),
     signer: { signAndSend: mySignerFn, publicKey: 'YourSignerPubkey...' },
   },
-  bridges: {
-    stripe: new StripeBridge({
-      webhookSecret: process.env.STRIPE_WEBHOOK_SECRET!,
-      productResolver: myProductResolver,
-      walletResolver: myWalletResolver,
-    }),
-  },
-  onMintFailure: async (instruction, error, ctx) => {
-    console.error('Mint failed:', instruction.productId, error.message);
-  },
+  bridges: { stripe: myStripeBridge },
+  onMintFailure: async (instruction, error) => console.error(error.message),
 });
 ```
 
@@ -120,6 +173,180 @@ if (check.entitled) {
   // Grant access
   console.log('Expires:', check.expiresAt);
 }
+```
+
+---
+
+## Starfish Destination
+
+[Starfish](https://github.com/Drakkar-Software/satellite) is a document-sync server. The `@doubloon/starfish` package stores entitlements as a per-user JSON document:
+
+```json
+{ "features": ["pro-monthly", "lifetime"] }
+```
+
+### How it works
+
+Starfish uses optimistic concurrency control (OCC). Every write is a pull-modify-push cycle:
+
+1. **Writer** (`StarfishWriter`) — pulls the current document, adds or removes the product slug, returns a pending transaction.
+2. **Signer** (`StarfishSigner`) — pushes the transaction. If the document changed since the pull (409 Conflict), `mintWithRetry` automatically re-runs the full cycle.
+
+### Install
+
+```bash
+pnpm add @doubloon/starfish
+pnpm add @drakkar.software/starfish-client  # peer dependency
+```
+
+### Usage
+
+```typescript
+import { createStarfishDestination } from '@doubloon/starfish';
+
+const dest = createStarfishDestination({
+  client: starfishClient,        // StarfishClient instance
+  products: PRODUCTS,            // array of { slug, name, defaultDuration }
+  signerKey: 'my-admin-key',     // used as signer.publicKey
+  // storagePath: 'users/{user}/entitlements',  // default
+  // field: 'features',                         // default
+});
+
+// dest.reader  — implements ChainReader (checkEntitlement, checkEntitlements, getProduct)
+// dest.writer  — implements ChainWriter (mintEntitlement, revokeEntitlement)
+// dest.signer  — implements ChainSigner (signAndSend, publicKey)
+// dest.registry — ProductRegistry (slug ↔ productId)
+```
+
+Pass `dest` directly to `defineConfig()` or `createServer()`:
+
+```typescript
+const { serverConfig, registry } = defineConfig({
+  products: PRODUCTS,
+  destination: dest,
+  onMintFailure: async (instr, err) => console.error(err),
+});
+```
+
+### Entitlement model
+
+Starfish entitlements have no per-feature expiry — `expiresAt` is always `null`. Expiry enforcement requires external revocation (via a cancellation webhook) or a reconciliation job.
+
+### OCC conflict retry
+
+409 conflicts are surfaced as a retryable `DoubloonError`. Use `mintWithRetry` for automatic backoff:
+
+```typescript
+import { mintWithRetry } from '@doubloon/server';
+
+const result = await mintWithRetry(
+  dest.writer,
+  dest.signer,
+  { productId, user, expiresAt: null, source: 'stripe', sourceId: 'sub_123' },
+  { maxRetries: 5, baseDelayMs: 50, maxDelayMs: 500 },
+);
+```
+
+---
+
+## Coded Config (`defineConfig`)
+
+`defineConfig` wires products, destination, and bridges into a ready-to-use `ServerConfig`. It lives in `@doubloon/server`.
+
+```typescript
+import { defineConfig, createServer } from '@doubloon/server';
+
+const { serverConfig, registry } = defineConfig({
+  products: [
+    { slug: 'pro-monthly', name: 'Pro Monthly', defaultDuration: 2592000 },
+    { slug: 'lifetime',    name: 'Lifetime',    defaultDuration: 0 },
+  ],
+  destination: dest,          // any DestinationLike: Starfish, LocalChain, custom
+  bridges: {
+    stripe: stripeBridge,
+    apple: appleBridge,
+  },
+  hooks: {
+    afterMint: async (instr, txSig) => analytics.track('mint', instr),
+  },
+  onMintFailure: async (instr, err) => alerting.send(err),
+  mintRetry: { maxRetries: 5, baseDelayMs: 50, maxDelayMs: 2000 },
+});
+
+const server = createServer(serverConfig);
+```
+
+**What it does:**
+- Validates slugs (lowercase alphanumeric + hyphens, no duplicates)
+- Derives deterministic `productId` hex from each slug via SHA-256
+- Auto-registers products on `LocalChain` stores (duck-typed; no import of `@doubloon/chain-local`)
+- Returns both `serverConfig` (for `createServer`) and `registry` (for slug/productId lookups)
+
+---
+
+## Namespace Support (`createNamespacedServer`)
+
+One server instance routing to multiple independent app configurations, each with its own products, destination, and bridges. Lives in `@doubloon/server`.
+
+```typescript
+import { createNamespacedServer } from '@doubloon/server';
+import { createStarfishDestination } from '@doubloon/starfish';
+import { createLocalChain } from '@doubloon/chain-local';
+
+const ns = createNamespacedServer({
+  namespaces: {
+    'app-prod': {
+      products: prodProducts,
+      destination: createStarfishDestination({ client, products: prodProducts, signerKey: 'key' }),
+      bridges: { stripe: stripeBridge, apple: appleBridge },
+    },
+    'app-staging': {
+      products: stagingProducts,
+      destination: createLocalChain(),
+    },
+  },
+  onMintFailure: async (instr, err) => console.error(err),
+  // dedup is shared across all namespaces by default
+});
+
+// In your HTTP server:
+app.all('*', async (req, res) => {
+  const result = await ns.handleRequest({
+    method: req.method,
+    url: req.url,
+    headers: req.headers as Record<string, string>,
+    body: req.body,
+  });
+  res.status(result.status).send(result.body);
+});
+```
+
+### URL routing
+
+| Method | Path | Action |
+|--------|------|--------|
+| `POST` | `/{namespace}/webhook` | Route webhook to namespace |
+| `GET` | `/{namespace}/check/{productId}/{wallet}` | Check entitlement |
+| `GET` | `/{namespace}/health` | Health check |
+| Any | Unknown namespace | 404 |
+
+### Namespace naming rules
+
+- Characters: `a-z A-Z 0-9 _ -`
+- Reserved (will throw): `webhook`, `check`, `health`, `products`, `entitlements`, `batch`
+
+### Programmatic access
+
+```typescript
+// Direct namespace server
+const appProd = ns.getNamespace('app-prod');
+await appProd?.processInstruction(/* ... */);
+
+// Check entitlement within a namespace
+const check = await ns.checkEntitlement('app-prod', productId, wallet);
+
+// List all registered namespaces
+console.log(ns.namespaces()); // ['app-prod', 'app-staging']
 ```
 
 ---
@@ -251,6 +478,9 @@ await fetch('https://api.myapp.com/webhooks', {
   body: JSON.stringify(googleReceipt),
 });
 ```
+
+> **Namespaced server:** If using `createNamespacedServer`, prefix the path with your namespace:
+> `POST https://api.myapp.com/{namespace}/webhook`
 
 **Hook type signatures** for building custom React hooks:
 
@@ -497,11 +727,21 @@ Store sends webhook
   processInstruction()
     - beforeMint hook    -- Optional gate (return false to reject)
     - mintWithRetry()    -- ChainWriter.mintEntitlement + ChainSigner.signAndSend
+                            (Starfish: retries full pull-push cycle on OCC 409)
     - afterMint hook     -- Post-processing (analytics, notifications)
        |
        v
   Return 200 OK
 ```
+
+### Destination Backends
+
+| Destination | Package | How entitlements are stored | Expiry |
+|-------------|---------|----------------------------|--------|
+| Solana | `@doubloon/solana` | PDA accounts (on-chain) | `expires_at` field in account |
+| EVM | `@doubloon/evm` | ERC-5643 subscription NFTs | NFT expiry via contract |
+| Starfish | `@doubloon/starfish` | `{ features: ["slug"] }` document per user | Lifetime (revoke via webhook) |
+| Local | `@doubloon/chain-local` | In-memory Map (dev/test) | `expiresAt` field |
 
 ### On-Chain Data Model (Solana)
 
@@ -626,31 +866,25 @@ const store = new S3MetadataStore({
 
 ### In-Memory Chain (No Blockchain Required)
 
+The simplest path — `defineConfig` auto-registers products:
+
 ```typescript
+import { defineConfig, createServer } from '@doubloon/server';
 import { createLocalChain } from '@doubloon/chain-local';
-import { createServer } from '@doubloon/server';
+
+const PRODUCTS = [
+  { slug: 'pro-monthly', name: 'Pro Monthly', defaultDuration: 2592000 },
+];
 
 const local = createLocalChain();
 
-// Register a product
-await local.writer.registerProduct({
-  productId: 'a1b2c3...',
-  name: 'Pro Plan',
-  metadataUri: 'https://example.com/pro.json',
-  defaultDuration: 2592000,
-  signer: local.signer.publicKey,
-});
-
-// Wire into the server -- same code as production
-const server = createServer({
-  chain: {
-    reader: local.reader,
-    writer: local.writer,
-    signer: local.signer,
-  },
-  bridges: { /* your bridges */ },
+const { serverConfig } = defineConfig({
+  products: PRODUCTS,
+  destination: local,   // products auto-registered, no manual registerProduct call
   onMintFailure: async () => {},
 });
+
+const server = createServer(serverConfig);
 
 // Seed test data directly
 local.store.mintEntitlement({
@@ -663,6 +897,29 @@ local.store.mintEntitlement({
 
 // Reset between tests
 local.store.clear();
+```
+
+Low-level (manual product registration):
+
+```typescript
+import { createLocalChain } from '@doubloon/chain-local';
+import { createServer } from '@doubloon/server';
+
+const local = createLocalChain();
+
+local.writer.registerProduct({
+  productId: 'a1b2c3...',
+  name: 'Pro Plan',
+  metadataUri: 'https://example.com/pro.json',
+  defaultDuration: 2592000,
+  signer: local.signer.publicKey,
+});
+
+const server = createServer({
+  chain: { reader: local.reader, writer: local.writer, signer: local.signer },
+  bridges: { /* your bridges */ },
+  onMintFailure: async () => {},
+});
 ```
 
 ---
@@ -727,8 +984,9 @@ The project uses GitHub Actions (`.github/workflows/ci.yml`):
 
 ```
 packages/
-  core/                  # Shared types and utilities
-  server/                # Webhook server, dedup, rate limiter, reconciliation
+  core/                  # Shared types, ProductRegistry, and utilities
+  server/                # Webhook server, defineConfig, namespaced server, dedup, rate limiter, reconciliation
+  starfish/              # Starfish entitlement destination (pull-modify-push, OCC retry)
   auth/                  # SIWS, session tokens, wallet resolver
   bridges/
     apple/               # Apple App Store bridge
@@ -752,7 +1010,7 @@ packages/
     python/              # Python client
 experiments/
   advanced/              # Stress tests, fuzz tests, throughput benchmarks (52 tests)
-tests/                   # E2E integration tests (474 tests across 27 suites)
+tests/                   # E2E integration tests (515 tests across 30 suites)
 scripts/
   deploy-program.ts      # Solana program deployment
   codegen.ts             # Type generation (Python, JSON Schema)

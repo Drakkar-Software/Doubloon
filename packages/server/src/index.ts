@@ -12,3 +12,18 @@ export type { DedupStore } from './dedup.js';
 
 export { createRateLimiter, MemoryRateLimiterStore } from './rate-limiter.js';
 export type { RateLimiterConfig, RateLimiter, RateLimiterStore } from './rate-limiter.js';
+
+export { defineConfig } from './define-config.js';
+export type {
+  DoubloonConfig,
+  DoubloonConfigResult,
+  DoubloonProductConfig,
+  DestinationLike,
+} from './define-config.js';
+
+export { createNamespacedServer } from './namespaced-server.js';
+export type {
+  NamespacedServerConfig,
+  NamespaceConfig,
+  NamespacedServer,
+} from './namespaced-server.js';
