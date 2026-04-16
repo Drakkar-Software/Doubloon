@@ -1,7 +1,7 @@
 /**
- * Supported blockchain networks.
+ * Supported entitlement destination backends.
  */
-export type Chain = 'solana' | 'evm' | 'starfish';
+export type Chain = 'starfish' | 'local';
 
 /**
  * Supported payment stores/sources.
@@ -13,17 +13,6 @@ export type Store = 'apple' | 'google' | 'stripe' | 'x402';
  */
 export type EntitlementSource = 'platform' | 'creator' | 'delegate' | 'apple' | 'google' | 'stripe' | 'x402';
 
-/** Maps EntitlementSource string to on-chain u8 discriminant. */
-export const ENTITLEMENT_SOURCE_TO_U8: Record<EntitlementSource, number> = {
-  platform: 0, creator: 1, delegate: 2,
-  apple: 3, google: 4, stripe: 5, x402: 6,
-};
-
-/** Maps on-chain u8 discriminant back to EntitlementSource string. */
-export const U8_TO_ENTITLEMENT_SOURCE: Record<number, EntitlementSource> = {
-  0: 'platform', 1: 'creator', 2: 'delegate',
-  3: 'apple', 4: 'google', 5: 'stripe', 6: 'x402',
-};
 
 /**
  * Normalized notification types across all stores.
@@ -47,10 +36,10 @@ export type NotificationType =
   | 'test';
 
 /**
- * Platform singleton state. Maps to the Platform PDA/contract state.
+ * Platform singleton state.
  */
 export interface Platform {
-  /** The wallet with super-admin privileges. Base58 (Solana) or 0x-prefixed (EVM). */
+  /** The identity with super-admin privileges. */
   readonly authority: string;
   /** Total number of products registered on this platform. */
   readonly productCount: number;
@@ -59,10 +48,10 @@ export interface Platform {
 }
 
 /**
- * A product registered on-chain. Maps to the Product PDA/contract state.
+ * A registered product.
  */
 export interface Product {
-  /** The wallet that registered this product. */
+  /** The identity that registered this product. */
   readonly creator: string;
   /** Unique product identifier. 64-char hex string (32 bytes). SHA-256 of slug. */
   readonly productId: string;
@@ -251,10 +240,9 @@ export interface ProductStoreMapping {
 }
 
 /**
- * Read-only chain reader interface.
- * Implemented by DoubloonSolanaReader, DoubloonEvmReader, LocalChainReader,
- * and lightweight mobile checkers. Consumers should depend on this interface
- * rather than concrete implementations.
+ * Read-only entitlement reader interface.
+ * Implemented by StarfishReader, LocalChainReader, and any custom destination.
+ * Consumers should depend on this interface rather than concrete implementations.
  */
 export interface ChainReader {
   checkEntitlement(productId: string, wallet: string): Promise<EntitlementCheck>;

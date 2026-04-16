@@ -18,7 +18,7 @@ export interface AppleBridgeConfig {
   environment: 'production' | 'sandbox';
   rootCertificates?: Buffer[];
   appAppleId?: number;
-  productResolver: import('@doubloon/storage').StoreProductResolver;
+  productResolver: { resolveProductId(store: string, storeSku: string): Promise<string | null> };
   walletResolver: import('@doubloon/auth').WalletResolver;
   logger?: import('@doubloon/core').Logger;
 }

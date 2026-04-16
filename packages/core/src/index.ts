@@ -17,7 +17,7 @@ export type {
   ProductMetadata,
   ProductStoreMapping,
 } from './types.js';
-export { isMintInstruction, ENTITLEMENT_SOURCE_TO_U8, U8_TO_ENTITLEMENT_SOURCE } from './types.js';
+export { isMintInstruction } from './types.js';
 
 // Errors
 export { DoubloonError } from './errors.js';

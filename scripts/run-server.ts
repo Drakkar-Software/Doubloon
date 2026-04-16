@@ -2,64 +2,49 @@
 /**
  * Doubloon local development server.
  *
- * Starts an HTTP server backed by the in-memory local chain.
- * Registers sample products, then listens for webhook requests
- * and entitlement check queries.
+ * Starts an HTTP server using a Starfish destination.
+ * Set STARFISH_URL and STARFISH_SIGNER_KEY environment variables.
  *
  * Usage:
- *   npx tsx scripts/run-server.ts
- *   # or
- *   pnpm run dev
+ *   STARFISH_URL=http://localhost:3000 STARFISH_SIGNER_KEY=dev-key pnpm run dev
  *
  * Endpoints:
- *   POST /webhook          — Receive store webhooks (Stripe, Apple, Google)
- *   GET  /check/:product/:wallet — Check entitlement
- *   GET  /products          — List registered products
- *   GET  /entitlements/:wallet — List all entitlements for a wallet
- *   GET  /health            — Health check
+ *   POST /webhook              — Receive store webhooks
+ *   GET  /check/:product/:user — Check entitlement
+ *   GET  /health               — Health check
  */
 import http from 'node:http';
-import { createLocalChain } from '@doubloon/chain-local';
 import { createServer as createDoubloonServer } from '@doubloon/server';
+import { createStarfishDestination } from '@doubloon/starfish';
+import { StarfishClient } from '@drakkar.software/starfish-client';
 import { deriveProductIdHex } from '@doubloon/core';
 import type { Logger, MintInstruction, StoreNotification } from '@doubloon/core';
 
 const PORT = parseInt(process.env.PORT ?? '3210', 10);
+const STARFISH_URL = process.env.STARFISH_URL ?? 'http://localhost:3000';
+const STARFISH_SIGNER_KEY = process.env.STARFISH_SIGNER_KEY ?? 'dev-key';
 
 // ---------------------------------------------------------------------------
 // Logger
 // ---------------------------------------------------------------------------
 const logger: Logger = {
   debug: (msg, ctx) => console.log(`  [DEBUG] ${msg}`, ctx ?? ''),
-  info: (msg, ctx) => console.log(`  [INFO]  ${msg}`, ctx ?? ''),
-  warn: (msg, ctx) => console.warn(`  [WARN]  ${msg}`, ctx ?? ''),
+  info:  (msg, ctx) => console.log(`  [INFO]  ${msg}`, ctx ?? ''),
+  warn:  (msg, ctx) => console.warn(`  [WARN]  ${msg}`, ctx ?? ''),
   error: (msg, ctx) => console.error(`  [ERROR] ${msg}`, ctx ?? ''),
 };
 
 // ---------------------------------------------------------------------------
-// Local chain + sample products
+// Products
 // ---------------------------------------------------------------------------
-const local = createLocalChain({ logger });
-
-const PRODUCTS = {
-  'pro-monthly': { name: 'Pro Monthly', duration: 30 * 86400 },
-  'pro-yearly': { name: 'Pro Yearly', duration: 365 * 86400 },
-  'lifetime': { name: 'Lifetime Access', duration: 0 },
-} as const;
+const PRODUCTS = [
+  { slug: 'pro-monthly', name: 'Pro Monthly', defaultDuration: 30 * 86400 },
+  { slug: 'pro-yearly',  name: 'Pro Yearly',  defaultDuration: 365 * 86400 },
+  { slug: 'lifetime',    name: 'Lifetime',    defaultDuration: 0 },
+] as const;
 
 const productIds: Record<string, string> = {};
-
-for (const [slug, meta] of Object.entries(PRODUCTS)) {
-  const id = deriveProductIdHex(slug);
-  productIds[slug] = id;
-  local.writer.registerProduct({
-    productId: id,
-    name: meta.name,
-    metadataUri: `https://example.com/products/${slug}.json`,
-    defaultDuration: meta.duration,
-    signer: local.signer.publicKey,
-  });
-}
+for (const p of PRODUCTS) productIds[p.slug] = deriveProductIdHex(p.slug);
 
 console.log('\nRegistered products:');
 for (const [slug, id] of Object.entries(productIds)) {
@@ -67,7 +52,19 @@ for (const [slug, id] of Object.entries(productIds)) {
 }
 
 // ---------------------------------------------------------------------------
-// Mock bridges (accept any payload, extract fields from JSON body)
+// Starfish destination
+// ---------------------------------------------------------------------------
+const starfishClient = new StarfishClient({ baseUrl: STARFISH_URL });
+
+const dest = createStarfishDestination({
+  client: starfishClient,
+  products: [...PRODUCTS],
+  signerKey: STARFISH_SIGNER_KEY,
+  logger,
+});
+
+// ---------------------------------------------------------------------------
+// Mock bridges (accept any JSON payload)
 // ---------------------------------------------------------------------------
 function createMockBridge(store: 'stripe' | 'apple' | 'google') {
   return {
@@ -76,17 +73,17 @@ function createMockBridge(store: 'stripe' | 'apple' | 'google') {
 
       const productSlug = parsed.productSlug ?? 'pro-monthly';
       const productId = productIds[productSlug] ?? deriveProductIdHex(productSlug);
-      const wallet = parsed.wallet ?? parsed.userWallet ?? '0xDefaultWallet';
+      const user = parsed.user ?? parsed.userWallet ?? 'default-user';
       const type = parsed.type ?? 'initial_purchase';
       const expiresAt = parsed.expiresAt ? new Date(parsed.expiresAt) : null;
 
       const notification: StoreNotification = {
-        id: parsed.id ?? `${store}_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+        id: parsed.id ?? `${store}_${Date.now()}`,
         type,
         store,
         environment: parsed.environment ?? 'production',
         productId,
-        userWallet: wallet,
+        userWallet: user,
         originalTransactionId: parsed.transactionId ?? `txn_${Date.now()}`,
         expiresAt,
         autoRenew: parsed.autoRenew ?? true,
@@ -97,21 +94,10 @@ function createMockBridge(store: 'stripe' | 'apple' | 'google') {
       };
 
       let instruction: MintInstruction | { productId: string; user: string; reason: string } | null = null;
-
       if (['initial_purchase', 'renewal', 'billing_recovery', 'uncancellation'].includes(type)) {
-        instruction = {
-          productId,
-          user: wallet,
-          expiresAt,
-          source: store,
-          sourceId: notification.originalTransactionId,
-        };
+        instruction = { productId, user, expiresAt, source: store, sourceId: notification.originalTransactionId };
       } else if (['revocation', 'refund', 'expiration'].includes(type)) {
-        instruction = {
-          productId,
-          user: wallet,
-          reason: `${store}:${type}`,
-        };
+        instruction = { productId, user, reason: `${store}:${type}` };
       }
 
       return { notification, instruction };
@@ -123,33 +109,14 @@ function createMockBridge(store: 'stripe' | 'apple' | 'google') {
 // Doubloon server
 // ---------------------------------------------------------------------------
 const doubloon = createDoubloonServer({
-  chain: {
-    reader: local.reader,
-    writer: local.writer,
-    signer: local.signer,
-  },
+  chain: { reader: dest.reader, writer: dest.writer, signer: dest.signer },
   bridges: {
     stripe: createMockBridge('stripe'),
-    apple: createMockBridge('apple'),
+    apple:  createMockBridge('apple'),
     google: createMockBridge('google'),
   },
-  rateLimiter: { maxRequests: 120, windowMs: 60_000 },
-  beforeMint: async (instruction: MintInstruction, notification: StoreNotification) => {
-    logger.info(`beforeMint: ${notification.store} -> ${instruction.user} for product ${instruction.productId.slice(0, 8)}...`);
-    return true;
-  },
-  afterMint: async (instruction, txSig) => {
-    logger.info(`afterMint: tx=${txSig} for user=${instruction.user}`);
-  },
-  afterRevoke: async (instruction, txSig) => {
-    logger.info(`afterRevoke: tx=${txSig} for user=${instruction.user}`);
-  },
   onMintFailure: async (instruction, error, ctx) => {
-    logger.error(`Mint failed: ${error.message}`, {
-      store: ctx.store,
-      retryCount: ctx.retryCount,
-      user: instruction.user,
-    });
+    logger.error(`Mint failed: ${error.message}`, { store: ctx.store, user: instruction.user });
   },
   logger,
 });
@@ -176,7 +143,6 @@ const server = http.createServer(async (req, res) => {
   const method = req.method ?? 'GET';
 
   try {
-    // POST /webhook
     if (method === 'POST' && url.pathname === '/webhook') {
       const body = await readBody(req);
       const headers: Record<string, string> = {};
@@ -188,39 +154,17 @@ const server = http.createServer(async (req, res) => {
       return;
     }
 
-    // GET /check/:product/:wallet
     const checkMatch = url.pathname.match(/^\/check\/([^/]+)\/([^/]+)$/);
     if (method === 'GET' && checkMatch) {
-      const [, productSlug, wallet] = checkMatch;
+      const [, productSlug, user] = checkMatch;
       const pid = productIds[productSlug] ?? productSlug;
-      const check = await doubloon.checkEntitlement(pid, wallet);
+      const check = await doubloon.checkEntitlement(pid, user);
       jsonResponse(res, 200, check);
       return;
     }
 
-    // GET /products
-    if (method === 'GET' && url.pathname === '/products') {
-      const products = local.store.getAllProducts();
-      jsonResponse(res, 200, { products, slugMap: productIds });
-      return;
-    }
-
-    // GET /entitlements/:wallet
-    const entMatch = url.pathname.match(/^\/entitlements\/([^/]+)$/);
-    if (method === 'GET' && entMatch) {
-      const [, wallet] = entMatch;
-      const entitlements = local.store.getUserEntitlements(wallet);
-      jsonResponse(res, 200, { wallet, entitlements });
-      return;
-    }
-
-    // GET /health
     if (method === 'GET' && url.pathname === '/health') {
-      jsonResponse(res, 200, {
-        status: 'ok',
-        products: local.store.productCount,
-        entitlements: local.store.entitlementCount,
-      });
+      jsonResponse(res, 200, { status: 'ok', starfishUrl: STARFISH_URL });
       return;
     }
 
@@ -232,12 +176,11 @@ const server = http.createServer(async (req, res) => {
 });
 
 server.listen(PORT, () => {
-  console.log(`\nDoubloon dev server running on http://localhost:${PORT}`);
+  console.log(`\nDoubloon dev server → http://localhost:${PORT}`);
+  console.log(`Starfish backend   → ${STARFISH_URL}`);
   console.log('\nEndpoints:');
   console.log(`  POST http://localhost:${PORT}/webhook`);
-  console.log(`  GET  http://localhost:${PORT}/check/{productSlug}/{wallet}`);
-  console.log(`  GET  http://localhost:${PORT}/products`);
-  console.log(`  GET  http://localhost:${PORT}/entitlements/{wallet}`);
+  console.log(`  GET  http://localhost:${PORT}/check/{productSlug}/{user}`);
   console.log(`  GET  http://localhost:${PORT}/health`);
   console.log('');
 });

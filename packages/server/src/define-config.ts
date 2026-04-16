@@ -17,18 +17,14 @@ export interface DoubloonProductConfig {
 }
 
 /**
- * Duck-typed destination — accepts StarfishDestination, LocalChain, or any
- * object satisfying ChainReader/Writer/Signer interfaces.
- *
- * When the destination also exposes a `store` with a `registerProduct` method
- * (i.e. LocalChain), defineConfig auto-registers all configured products.
+ * Generic destination — accepts any object satisfying the reader/writer/signer
+ * interfaces. Pass the result of createStarfishDestination() or any custom
+ * backend implementation.
  */
 export interface DestinationLike {
   reader: ServerConfig['chain']['reader'];
   writer: ServerConfig['chain']['writer'];
   signer: ServerConfig['chain']['signer'];
-  /** Present on LocalChain. Used for auto-registering products. */
-  store?: unknown;
 }
 
 export interface DoubloonConfig {
@@ -65,18 +61,14 @@ export interface DoubloonConfigResult {
  *
  * @example
  * ```ts
- * // Starfish destination (production)
  * import { createStarfishDestination } from '@doubloon/starfish';
  * const dest = createStarfishDestination({ client, products, signerKey: 'admin' });
- * const { serverConfig } = defineConfig({ products, destination: dest, onMintFailure });
- *
- * // Local destination (dev/test)
- * import { createLocalChain } from '@doubloon/chain-local';
- * const { serverConfig } = defineConfig({
+ * const { serverConfig, registry } = defineConfig({
  *   products,
- *   destination: createLocalChain(),  // products auto-registered on store
- *   onMintFailure,
+ *   destination: dest,
+ *   onMintFailure: async (instr, err) => console.error(err),
  * });
+ * const server = createServer(serverConfig);
  * ```
  */
 export function defineConfig(config: DoubloonConfig): DoubloonConfigResult {
@@ -85,25 +77,6 @@ export function defineConfig(config: DoubloonConfig): DoubloonConfigResult {
   }
 
   const registry = createProductRegistry(config.products);
-
-  // Auto-register products on local chain stores (duck-typed via store.registerProduct)
-  const { store } = config.destination;
-  if (store !== undefined && store !== null && typeof store === 'object') {
-    const s = store as Record<string, unknown>;
-    if (typeof s['registerProduct'] === 'function' && typeof s['getProduct'] === 'function') {
-      for (const entry of registry.entries()) {
-        if ((s['getProduct'] as (id: string) => unknown)(entry.productId) === null) {
-          (s['registerProduct'] as (p: object) => void)({
-            productId: entry.productId,
-            name: entry.name,
-            metadataUri: '',
-            defaultDuration: entry.defaultDuration,
-            creator: 'doubloon-config',
-          });
-        }
-      }
-    }
-  }
 
   const serverConfig: ServerConfig = {
     chain: {

@@ -4,49 +4,16 @@
  */
 import { describe, it, expect } from 'vitest';
 import {
-  ENTITLEMENT_SOURCE_TO_U8,
-  U8_TO_ENTITLEMENT_SOURCE,
   isMintInstruction,
   DoubloonError,
   checkEntitlement,
 } from '@doubloon/core';
 import type {
-  EntitlementSource,
   MintInstruction,
   RevokeInstruction,
   Entitlement,
   NotificationType,
 } from '@doubloon/core';
-
-describe('ENTITLEMENT_SOURCE_TO_U8 / U8_TO_ENTITLEMENT_SOURCE round-trip', () => {
-  const sources: EntitlementSource[] = ['platform', 'creator', 'delegate', 'apple', 'google', 'stripe', 'x402'];
-
-  it('all 7 sources have u8 values 0-6', () => {
-    for (let i = 0; i < sources.length; i++) {
-      expect(ENTITLEMENT_SOURCE_TO_U8[sources[i]]).toBe(i);
-    }
-  });
-
-  it('u8 → source → u8 round-trip', () => {
-    for (let i = 0; i <= 6; i++) {
-      const source = U8_TO_ENTITLEMENT_SOURCE[i];
-      expect(source).toBeDefined();
-      expect(ENTITLEMENT_SOURCE_TO_U8[source]).toBe(i);
-    }
-  });
-
-  it('source → u8 → source round-trip', () => {
-    for (const source of sources) {
-      const u8 = ENTITLEMENT_SOURCE_TO_U8[source];
-      expect(U8_TO_ENTITLEMENT_SOURCE[u8]).toBe(source);
-    }
-  });
-
-  it('u8 value 7+ is undefined', () => {
-    expect(U8_TO_ENTITLEMENT_SOURCE[7]).toBeUndefined();
-    expect(U8_TO_ENTITLEMENT_SOURCE[255]).toBeUndefined();
-  });
-});
 
 describe('isMintInstruction edge cases', () => {
   it('distinguishes by source field presence', () => {

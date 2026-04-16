@@ -18,7 +18,6 @@
   },
   "dependencies": {
     "@doubloon/core": "workspace:*",
-    "@doubloon/storage": "workspace:*",
     "@doubloon/auth": "workspace:*"
   },
   "devDependencies": {

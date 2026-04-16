@@ -7,7 +7,7 @@ export interface BridgeResult {
 
 export interface StripeBridgeConfig {
   webhookSecret: string;
-  productResolver: import('@doubloon/storage').StoreProductResolver;
+  productResolver: { resolveProductId(store: string, storeSku: string): Promise<string | null> };
   walletResolver: import('@doubloon/auth').WalletResolver;
   logger?: import('@doubloon/core').Logger;
 }
