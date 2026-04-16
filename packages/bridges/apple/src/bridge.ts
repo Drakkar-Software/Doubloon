@@ -1,12 +1,11 @@
 import type { StoreNotification, MintInstruction, RevokeInstruction, NotificationType, Logger } from '@doubloon/core';
 import { DoubloonError, nullLogger } from '@doubloon/core';
-import type { StoreProductResolver } from '@doubloon/storage';
 import type { WalletResolver } from '@doubloon/auth';
 import { mapAppleNotificationType, computeAppleDeduplicationKey } from './notification-map.js';
 import type { BridgeResult, BridgeReconcileResult, AppleBridgeConfig } from './types.js';
 
 export class AppleBridge {
-  private productResolver: StoreProductResolver;
+  private productResolver: AppleBridgeConfig['productResolver'];
   private walletResolver: WalletResolver;
   private environment: 'production' | 'sandbox';
   private bundleId: string;

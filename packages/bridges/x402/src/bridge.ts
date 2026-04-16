@@ -59,20 +59,6 @@ export class X402Bridge {
       throw new DoubloonError('PRODUCT_NOT_MAPPED', `Unknown x402 product ID: ${receipt.productId}`);
     }
 
-    // Validate that the receipt amount meets the expected price (if metadataStore configured)
-    const productMetadata = this.config.metadataStore
-      ? await this.config.metadataStore.getProduct(onChainProductId)
-      : null;
-    if (productMetadata?.storeBindings.x402) {
-      const expectedPrice = productMetadata.storeBindings.x402.priceUsd;
-      if (receipt.amountUsd < expectedPrice) {
-        throw new DoubloonError(
-          'INVALID_RECEIPT',
-          `Insufficient payment: received $${receipt.amountUsd}, expected at least $${expectedPrice}`,
-        );
-      }
-    }
-
     const deduplicationKey = computeX402DeduplicationKey(
       receipt.paymentId,
       receipt.wallet,

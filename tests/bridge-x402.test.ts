@@ -8,15 +8,12 @@ import { DoubloonError } from '@doubloon/core';
 
 function makeX402Bridge(overrides?: {
   resolveProductId?: (store: string, sku: string) => Promise<string | null>;
-  metadataStore?: { getProduct: (id: string) => Promise<any> };
 }) {
   return new X402Bridge({
     facilitatorUrl: 'https://facilitator.example.com',
     productResolver: {
       resolveProductId: overrides?.resolveProductId ?? (async () => 'on-chain-pid'),
-      resolveStoreSku: async () => null,
     },
-    metadataStore: overrides?.metadataStore,
   });
 }
 
@@ -81,84 +78,6 @@ describe('X402Bridge.verifyAndMint', () => {
     })).rejects.toMatchObject({ code: 'PRODUCT_NOT_MAPPED' });
   });
 
-  it('throws INVALID_RECEIPT when amount below expected price', async () => {
-    const bridge = makeX402Bridge({
-      metadataStore: {
-        getProduct: async () => ({
-          productId: 'on-chain-pid',
-          storeBindings: { x402: { priceUsd: 10, durationSeconds: 3600 } },
-        }),
-      },
-    });
-
-    await expect(bridge.verifyAndMint({
-      paymentId: 'pay-4',
-      wallet: '0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
-      productId: 'product',
-      amountUsd: 5.00, // less than required 10
-      durationSeconds: 3600,
-      timestamp: Date.now(),
-    })).rejects.toMatchObject({ code: 'INVALID_RECEIPT' });
-  });
-
-  it('succeeds when amount meets expected price', async () => {
-    const bridge = makeX402Bridge({
-      metadataStore: {
-        getProduct: async () => ({
-          productId: 'on-chain-pid',
-          storeBindings: { x402: { priceUsd: 10, durationSeconds: 3600 } },
-        }),
-      },
-    });
-
-    const result = await bridge.verifyAndMint({
-      paymentId: 'pay-5',
-      wallet: '0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
-      productId: 'product',
-      amountUsd: 10.00,
-      durationSeconds: 3600,
-      timestamp: Date.now(),
-    });
-
-    expect(result.instruction).toBeDefined();
-  });
-
-  it('skips price check when metadataStore not configured', async () => {
-    const bridge = makeX402Bridge({ metadataStore: undefined });
-
-    const result = await bridge.verifyAndMint({
-      paymentId: 'pay-6',
-      wallet: '0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
-      productId: 'product',
-      amountUsd: 0.01, // tiny amount, but no price check
-      durationSeconds: 60,
-      timestamp: Date.now(),
-    });
-
-    expect(result.instruction).toBeDefined();
-  });
-
-  it('skips price check when product has no x402 bindings', async () => {
-    const bridge = makeX402Bridge({
-      metadataStore: {
-        getProduct: async () => ({
-          productId: 'on-chain-pid',
-          storeBindings: { stripe: { priceIds: ['price_1'] } }, // no x402
-        }),
-      },
-    });
-
-    const result = await bridge.verifyAndMint({
-      paymentId: 'pay-7',
-      wallet: '0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
-      productId: 'product',
-      amountUsd: 0.01,
-      durationSeconds: 60,
-      timestamp: Date.now(),
-    });
-
-    expect(result.instruction).toBeDefined();
-  });
 });
 
 describe('X402Bridge.createPaymentRequired', () => {

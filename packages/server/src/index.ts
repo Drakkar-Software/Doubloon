@@ -19,6 +19,7 @@ export type {
   DoubloonConfigResult,
   DoubloonProductConfig,
   DestinationLike,
+  Destination,
 } from './define-config.js';
 
 export { createNamespacedServer } from './namespaced-server.js';

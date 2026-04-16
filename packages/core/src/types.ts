@@ -241,7 +241,7 @@ export interface ProductStoreMapping {
 
 /**
  * Read-only entitlement reader interface.
- * Implemented by StarfishReader, LocalChainReader, and any custom destination.
+ * Implemented by StarfishReader and any custom destination.
  * Consumers should depend on this interface rather than concrete implementations.
  */
 export interface ChainReader {
@@ -249,6 +249,34 @@ export interface ChainReader {
   checkEntitlements(productIds: string[], wallet: string): Promise<EntitlementCheckBatch>;
   getEntitlement(productId: string, wallet: string): Promise<Entitlement | null>;
   getProduct(productId: string): Promise<Product | null>;
+}
+
+/**
+ * Write interface for minting and revoking entitlements.
+ * Implemented by destination backends (e.g. StarfishWriter).
+ */
+export interface ChainWriter {
+  mintEntitlement(params: MintInstruction & { signer: string; autoRenew?: boolean }): Promise<unknown>;
+  revokeEntitlement?(params: RevokeInstruction & { signer: string }): Promise<unknown>;
+}
+
+/**
+ * Signer interface for committing prepared transactions.
+ * Implemented by destination backends (e.g. StarfishSigner).
+ */
+export interface ChainSigner {
+  signAndSend(transaction: unknown): Promise<string>;
+  publicKey: string;
+}
+
+/**
+ * A complete entitlement destination — reader + writer + signer.
+ * Implemented by createStarfishDestination() and any custom backend.
+ */
+export interface Destination {
+  reader: ChainReader;
+  writer: ChainWriter;
+  signer: ChainSigner;
 }
 
 /**

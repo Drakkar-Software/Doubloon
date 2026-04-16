@@ -1,5 +1,7 @@
 import { DoubloonError } from '@doubloon/core';
-import type { MintInstruction, RevokeInstruction } from '@doubloon/core';
+import type { MintInstruction, ChainWriter, ChainSigner } from '@doubloon/core';
+
+export type { ChainWriter, ChainSigner };
 
 export interface MintRetryOpts {
   maxRetries?: number;
@@ -12,16 +14,6 @@ export interface MintRetryResult {
   txSignature?: string;
   retryCount: number;
   lastError?: Error;
-}
-
-export interface ChainWriter {
-  mintEntitlement(params: MintInstruction & { signer: string; autoRenew?: boolean }): Promise<unknown>;
-  revokeEntitlement?(params: RevokeInstruction & { signer: string }): Promise<unknown>;
-}
-
-export interface ChainSigner {
-  signAndSend(transaction: unknown): Promise<string>;
-  publicKey: string;
 }
 
 /**

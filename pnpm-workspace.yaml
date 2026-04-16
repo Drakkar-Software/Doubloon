@@ -1,7 +1,7 @@
 packages:
   - "packages/*"
   - "packages/bridges/*"
-  - "packages/starfish"
+  - "packages/destinations/*"
   # Starfish packages from sister monorepo (needed by @doubloon/starfish)
   - "../../Drakkar-Software/satellite/packages/ts/client"
   - "../../Drakkar-Software/satellite/packages/ts/protocol"

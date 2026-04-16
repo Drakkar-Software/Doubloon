@@ -1,4 +1,4 @@
-import type { Logger } from '@doubloon/core';
+import type { Logger, Destination } from '@doubloon/core';
 import type { StarfishClient } from '@drakkar.software/starfish-client';
 import { createProductRegistry } from './product-registry.js';
 import type { ProductRegistry } from './product-registry.js';
@@ -24,7 +24,8 @@ export interface StarfishDestinationConfig {
   logger?: Logger;
 }
 
-export interface StarfishDestination {
+/** Starfish-backed entitlement destination. Implements the core Destination interface. */
+export interface StarfishDestination extends Destination {
   reader: StarfishReader;
   writer: StarfishWriter;
   signer: StarfishSigner;

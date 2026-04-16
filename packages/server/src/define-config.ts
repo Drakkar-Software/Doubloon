@@ -1,4 +1,4 @@
-import type { Logger } from '@doubloon/core';
+import type { Logger, Destination } from '@doubloon/core';
 import { DoubloonError } from '@doubloon/core';
 import { createProductRegistry } from '@doubloon/core';
 import type { ProductRegistry } from '@doubloon/core';
@@ -7,7 +7,7 @@ import type { MintRetryOpts } from './mint-retry.js';
 import type { DedupStore } from './dedup.js';
 import type { RateLimiterConfig } from './rate-limiter.js';
 
-export type { ProductRegistry };
+export type { ProductRegistry, Destination };
 
 export interface DoubloonProductConfig {
   slug: string;
@@ -17,15 +17,11 @@ export interface DoubloonProductConfig {
 }
 
 /**
- * Generic destination — accepts any object satisfying the reader/writer/signer
- * interfaces. Pass the result of createStarfishDestination() or any custom
- * backend implementation.
+ * Generic destination — any backend implementing the core Destination interface.
+ * Pass the result of createStarfishDestination() or a custom backend.
+ * @alias Destination
  */
-export interface DestinationLike {
-  reader: ServerConfig['chain']['reader'];
-  writer: ServerConfig['chain']['writer'];
-  signer: ServerConfig['chain']['signer'];
-}
+export type DestinationLike = Destination;
 
 export interface DoubloonConfig {
   products: DoubloonProductConfig[];
