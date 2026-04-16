@@ -1,5 +1,5 @@
-import type { Logger } from '@doubloon/core';
-import { DoubloonError, nullLogger } from '@doubloon/core';
+import type { Logger } from '@drakkar.software/doubloon-core';
+import { DoubloonError, nullLogger } from '@drakkar.software/doubloon-core';
 import type { StarfishClient } from '@drakkar.software/starfish-client';
 import { ConflictError, StarfishHttpError } from '@drakkar.software/starfish-client';
 import type { StarfishTransaction } from './writer.js';

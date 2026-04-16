@@ -1,7 +1,7 @@
-import type { Logger, Destination, Bridge } from '@doubloon/core';
-import { DoubloonError } from '@doubloon/core';
-import { createProductRegistry } from '@doubloon/core';
-import type { ProductRegistry } from '@doubloon/core';
+import type { Logger, Destination, Bridge } from '@drakkar.software/doubloon-core';
+import { DoubloonError } from '@drakkar.software/doubloon-core';
+import { createProductRegistry } from '@drakkar.software/doubloon-core';
+import type { ProductRegistry } from '@drakkar.software/doubloon-core';
 import type { ServerConfig } from './server.js';
 import type { MintRetryOpts } from './mint-retry.js';
 import type { DedupStore } from './dedup.js';
@@ -62,7 +62,7 @@ export interface DoubloonConfigResult {
  *
  * @example
  * ```ts
- * import { createStarfishDestination } from '@doubloon/starfish';
+ * import { createStarfishDestination } from '@drakkar.software/doubloon-starfish';
  * const dest = createStarfishDestination({ client, products, signerKey: 'admin' });
  * const { serverConfig, registry } = defineConfig({
  *   products,

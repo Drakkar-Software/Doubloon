@@ -1,6 +1,6 @@
-import type { StoreNotification, MintInstruction, RevokeInstruction, NotificationType, Logger } from '@doubloon/core';
-import { DoubloonError, nullLogger } from '@doubloon/core';
-import type { WalletResolver } from '@doubloon/core';
+import type { StoreNotification, MintInstruction, RevokeInstruction, NotificationType, Logger } from '@drakkar.software/doubloon-core';
+import { DoubloonError, nullLogger } from '@drakkar.software/doubloon-core';
+import type { WalletResolver } from '@drakkar.software/doubloon-core';
 import { mapAppleNotificationType, computeAppleDeduplicationKey } from './notification-map.js';
 import type { BridgeResult, BridgeReconcileResult, AppleBridgeConfig } from './types.js';
 
@@ -96,7 +96,7 @@ export class AppleBridge {
 
   async reconcile(
     _originalTransactionId: string,
-    _currentOnChainState: import('@doubloon/core').Entitlement | null,
+    _currentOnChainState: import('@drakkar.software/doubloon-core').Entitlement | null,
   ): Promise<BridgeReconcileResult> {
     // Placeholder - would query Apple API in production
     return { drift: false, instruction: null };

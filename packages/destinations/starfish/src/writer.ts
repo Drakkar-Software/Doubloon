@@ -1,5 +1,5 @@
-import type { MintInstruction, RevokeInstruction, Logger } from '@doubloon/core';
-import { DoubloonError, nullLogger } from '@doubloon/core';
+import type { MintInstruction, RevokeInstruction, Logger } from '@drakkar.software/doubloon-core';
+import { DoubloonError, nullLogger } from '@drakkar.software/doubloon-core';
 import type { StarfishClient } from '@drakkar.software/starfish-client';
 import { StarfishHttpError } from '@drakkar.software/starfish-client';
 import type { ProductRegistry } from './product-registry.js';

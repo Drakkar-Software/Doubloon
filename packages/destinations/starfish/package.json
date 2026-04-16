@@ -1,5 +1,5 @@
 {
-  "name": "@doubloon/starfish",
+  "name": "@drakkar.software/doubloon-starfish",
   "version": "0.2.0",
   "description": "Starfish entitlement destination for Doubloon — reads/writes entitlements via the Starfish sync protocol",
   "type": "module",
@@ -18,7 +18,7 @@
     "lint": "eslint src/"
   },
   "dependencies": {
-    "@doubloon/core": "workspace:*"
+    "@drakkar.software/doubloon-core": "workspace:*"
   },
   "peerDependencies": {
     "@drakkar.software/starfish-client": ">=1.0.0"

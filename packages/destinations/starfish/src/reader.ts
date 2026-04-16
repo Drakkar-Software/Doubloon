@@ -1,5 +1,5 @@
-import type { ChainReader, EntitlementCheck, EntitlementCheckBatch, Entitlement, Product, Logger } from '@doubloon/core';
-import { checkEntitlement, checkEntitlements, DoubloonError, nullLogger } from '@doubloon/core';
+import type { ChainReader, EntitlementCheck, EntitlementCheckBatch, Entitlement, Product, Logger } from '@drakkar.software/doubloon-core';
+import { checkEntitlement, checkEntitlements, DoubloonError, nullLogger } from '@drakkar.software/doubloon-core';
 import type { StarfishClient } from '@drakkar.software/starfish-client';
 import { StarfishHttpError, pullEntitlements } from '@drakkar.software/starfish-client';
 import type { ProductRegistry } from './product-registry.js';

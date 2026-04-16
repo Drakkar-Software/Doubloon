@@ -7,8 +7,8 @@ import type {
   EntitlementCheckBatch,
   Bridge,
   Logger,
-} from '@doubloon/core';
-import { nullLogger, isMintInstruction, DoubloonError } from '@doubloon/core';
+} from '@drakkar.software/doubloon-core';
+import { nullLogger, isMintInstruction, DoubloonError } from '@drakkar.software/doubloon-core';
 import { mintWithRetry } from './mint-retry.js';
 import type { ChainWriter, ChainSigner, MintRetryOpts, MintRetryResult } from './mint-retry.js';
 import { MemoryDedupStore } from './dedup.js';

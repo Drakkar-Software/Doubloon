@@ -7,13 +7,13 @@ import {
   isMintInstruction,
   DoubloonError,
   checkEntitlement,
-} from '@doubloon/core';
+} from '@drakkar.software/doubloon-core';
 import type {
   MintInstruction,
   RevokeInstruction,
   Entitlement,
   NotificationType,
-} from '@doubloon/core';
+} from '@drakkar.software/doubloon-core';
 
 describe('isMintInstruction edge cases', () => {
   it('distinguishes by source field presence', () => {

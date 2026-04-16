@@ -1,5 +1,5 @@
 /**
- * Integration tests for @doubloon/anchor entitlement destination.
+ * Integration tests for @drakkar.software/doubloon-anchor entitlement destination.
  *
  * Uses a mock Supabase client backed by an in-memory array to test the full
  * mint/check/revoke lifecycle. Covers all four entitlement check reasons:
@@ -7,10 +7,10 @@
  */
 
 import { describe, it, expect, beforeEach } from 'vitest';
-import { createAnchorDestination } from '@doubloon/anchor';
-import { createProductRegistry } from '@doubloon/core';
-import { mintWithRetry } from '@doubloon/server';
-import type { EntitlementRow } from '@doubloon/anchor';
+import { createAnchorDestination } from '@drakkar.software/doubloon-anchor';
+import { createProductRegistry } from '@drakkar.software/doubloon-core';
+import { mintWithRetry } from '@drakkar.software/doubloon-server';
+import type { EntitlementRow } from '@drakkar.software/doubloon-anchor';
 
 // ---------------------------------------------------------------------------
 // Mock Supabase client backed by an in-memory store

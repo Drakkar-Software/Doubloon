@@ -1,5 +1,5 @@
-import type { MintInstruction, StoreNotification } from '@doubloon/core';
-import { DoubloonError, nullLogger } from '@doubloon/core';
+import type { MintInstruction, StoreNotification } from '@drakkar.software/doubloon-core';
+import { DoubloonError, nullLogger } from '@drakkar.software/doubloon-core';
 import { mapX402PaymentType, computeX402DeduplicationKey } from './notification-map.js';
 import type { X402BridgeResult, X402BridgeConfig } from './types.js';
 
@@ -31,7 +31,7 @@ export interface X402PaymentReceipt {
  */
 export class X402Bridge {
   private readonly config: X402BridgeConfig;
-  private readonly logger: import('@doubloon/core').Logger;
+  private readonly logger: import('@drakkar.software/doubloon-core').Logger;
 
   constructor(config: X402BridgeConfig) {
     this.config = config;

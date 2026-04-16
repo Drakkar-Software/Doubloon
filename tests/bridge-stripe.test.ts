@@ -3,7 +3,7 @@
  * instruction routing, all event types, previousAttributes branching.
  */
 import { describe, it, expect, vi } from 'vitest';
-import { mapStripeEventType, computeStripeDeduplicationKey } from '@doubloon/bridge-stripe';
+import { mapStripeEventType, computeStripeDeduplicationKey } from '@drakkar.software/doubloon-bridge-stripe';
 
 describe('Stripe event type mapping', () => {
   it('customer.subscription.created → initial_purchase', () => {

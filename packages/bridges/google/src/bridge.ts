@@ -1,5 +1,5 @@
-import type { MintInstruction, RevokeInstruction, StoreNotification } from '@doubloon/core';
-import { DoubloonError, nullLogger } from '@doubloon/core';
+import type { MintInstruction, RevokeInstruction, StoreNotification } from '@drakkar.software/doubloon-core';
+import { DoubloonError, nullLogger } from '@drakkar.software/doubloon-core';
 import { mapGoogleNotificationType, computeGoogleDeduplicationKey } from './notification-map.js';
 import type { BridgeResult, GoogleBridgeConfig } from './types.js';
 
@@ -30,7 +30,7 @@ interface GoogleRTDN {
  */
 export class GoogleBridge {
   private readonly config: GoogleBridgeConfig;
-  private readonly logger: import('@doubloon/core').Logger;
+  private readonly logger: import('@drakkar.software/doubloon-core').Logger;
 
   constructor(config: GoogleBridgeConfig) {
     this.config = config;

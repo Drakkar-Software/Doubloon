@@ -1,4 +1,4 @@
-import type { Destination, Logger } from '@doubloon/core';
+import type { Destination, Logger } from '@drakkar.software/doubloon-core';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { createProductRegistry } from './product-registry.js';
 import type { ProductRegistry } from './product-registry.js';
@@ -33,7 +33,7 @@ export interface AnchorDestination extends Destination {
  * Usage with the Doubloon server:
  * ```ts
  * import { createClient } from '@supabase/supabase-js';
- * import { createAnchorDestination } from '@doubloon/anchor';
+ * import { createAnchorDestination } from '@drakkar.software/doubloon-anchor';
  *
  * const supabase = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_SERVICE_KEY!);
  *

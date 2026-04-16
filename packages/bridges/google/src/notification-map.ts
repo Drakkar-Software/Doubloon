@@ -1,4 +1,4 @@
-import type { NotificationType } from '@doubloon/core';
+import type { NotificationType } from '@drakkar.software/doubloon-core';
 
 export function mapGoogleNotificationType(rtdnType: number): NotificationType {
   switch (rtdnType) {

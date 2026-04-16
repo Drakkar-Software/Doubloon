@@ -313,7 +313,7 @@ describe('createServer', () => {
   });
 
   it('returns 400 for bridge DoubloonError with client error code', async () => {
-    const { DoubloonError } = await import('@doubloon/core');
+    const { DoubloonError } = await import('@drakkar.software/doubloon-core');
     const mockBridge = {
       handleNotification: vi.fn(async () => {
         throw new DoubloonError('INVALID_RECEIPT', 'Bad notification body');

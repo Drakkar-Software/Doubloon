@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { mintWithRetry } from '../src/mint-retry.js';
-import { DoubloonError } from '@doubloon/core';
+import { DoubloonError } from '@drakkar.software/doubloon-core';
 import type { ChainWriter, ChainSigner } from '../src/mint-retry.js';
 
 const mockInstruction = {

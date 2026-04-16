@@ -1,4 +1,4 @@
-import type { NotificationType } from '@doubloon/core';
+import type { NotificationType } from '@drakkar.software/doubloon-core';
 
 /**
  * x402 payments always represent an initial purchase — there is no

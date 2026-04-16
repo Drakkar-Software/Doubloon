@@ -1,14 +1,14 @@
 /**
- * Integration tests for @doubloon/starfish entitlement destination.
+ * Integration tests for @drakkar.software/doubloon-starfish entitlement destination.
  *
  * Uses a mock StarfishClient backed by an in-memory Map to test the full
  * pull-modify-push lifecycle: mint, check, revoke, and OCC conflict retry.
  */
 
 import { describe, it, expect, beforeEach } from 'vitest';
-import { createStarfishDestination } from '@doubloon/starfish';
-import { createProductRegistry } from '@doubloon/core';
-import { mintWithRetry } from '@doubloon/server';
+import { createStarfishDestination } from '@drakkar.software/doubloon-starfish';
+import { createProductRegistry } from '@drakkar.software/doubloon-core';
+import { mintWithRetry } from '@drakkar.software/doubloon-server';
 import type { StarfishClient } from '@drakkar.software/starfish-client';
 import { ConflictError, StarfishHttpError } from '@drakkar.software/starfish-client';
 

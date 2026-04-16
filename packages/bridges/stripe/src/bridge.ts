@@ -1,5 +1,5 @@
-import type { MintInstruction, RevokeInstruction, StoreNotification } from '@doubloon/core';
-import { DoubloonError, nullLogger } from '@doubloon/core';
+import type { MintInstruction, RevokeInstruction, StoreNotification } from '@drakkar.software/doubloon-core';
+import { DoubloonError, nullLogger } from '@drakkar.software/doubloon-core';
 import Stripe from 'stripe';
 import { mapStripeEventType, computeStripeDeduplicationKey } from './notification-map.js';
 import type { BridgeResult, StripeBridgeConfig } from './types.js';
@@ -26,7 +26,7 @@ export interface StripeWebhookEvent {
  */
 export class StripeBridge {
   private readonly config: StripeBridgeConfig;
-  private readonly logger: import('@doubloon/core').Logger;
+  private readonly logger: import('@drakkar.software/doubloon-core').Logger;
 
   constructor(config: StripeBridgeConfig) {
     this.config = config;

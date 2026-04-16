@@ -3,8 +3,8 @@
  * instruction routing, empty notifications, deduplication keys, and reconcile.
  */
 import { describe, it, expect, vi } from 'vitest';
-import { AppleBridge, mapAppleNotificationType, computeAppleDeduplicationKey } from '@doubloon/bridge-apple';
-import { DoubloonError } from '@doubloon/core';
+import { AppleBridge, mapAppleNotificationType, computeAppleDeduplicationKey } from '@drakkar.software/doubloon-bridge-apple';
+import { DoubloonError } from '@drakkar.software/doubloon-core';
 
 function makeAppleBridge(overrides?: {
   resolveProductId?: (store: string, sku: string) => Promise<string | null>;

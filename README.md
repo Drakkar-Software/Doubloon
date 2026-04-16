@@ -28,28 +28,28 @@ Custom Store ─────┘
 
 | Package | Description |
 |---------|-------------|
-| `@doubloon/core` | Shared types, `ProductRegistry`, `WalletResolver`, error codes, utilities |
-| `@doubloon/server` | Webhook handler, `defineConfig`, `createNamespacedServer`, dedup, rate limiter, reconciliation |
-| `@doubloon/starfish` | Starfish entitlement destination — pull-modify-push with OCC retry |
-| `@doubloon/anchor` | Supabase entitlement destination — full rows with expiry, source, revocation |
-| `@doubloon/bridge-apple` | Apple App Store Server Notifications V2 |
-| `@doubloon/bridge-google` | Google Play Real-Time Developer Notifications |
-| `@doubloon/bridge-stripe` | Stripe webhook events with signature verification |
-| `@doubloon/bridge-x402` | HTTP 402 Payment Required protocol |
+| `@drakkar.software/doubloon-core` | Shared types, `ProductRegistry`, `WalletResolver`, error codes, utilities |
+| `@drakkar.software/doubloon-server` | Webhook handler, `defineConfig`, `createNamespacedServer`, dedup, rate limiter, reconciliation |
+| `@drakkar.software/doubloon-starfish` | Starfish entitlement destination — pull-modify-push with OCC retry |
+| `@drakkar.software/doubloon-anchor` | Supabase entitlement destination — full rows with expiry, source, revocation |
+| `@drakkar.software/doubloon-bridge-apple` | Apple App Store Server Notifications V2 |
+| `@drakkar.software/doubloon-bridge-google` | Google Play Real-Time Developer Notifications |
+| `@drakkar.software/doubloon-bridge-stripe` | Stripe webhook events with signature verification |
+| `@drakkar.software/doubloon-bridge-x402` | HTTP 402 Payment Required protocol |
 
 ---
 
 ## Quick Start
 
 ```bash
-pnpm add @doubloon/server @doubloon/starfish @doubloon/bridge-stripe
+pnpm add @drakkar.software/doubloon-server @drakkar.software/doubloon-starfish @drakkar.software/doubloon-bridge-stripe
 ```
 
 
 ```typescript
-import { defineConfig, createServer } from '@doubloon/server';
-import { createStarfishDestination } from '@doubloon/starfish';
-import { StripeBridge } from '@doubloon/bridge-stripe';
+import { defineConfig, createServer } from '@drakkar.software/doubloon-server';
+import { createStarfishDestination } from '@drakkar.software/doubloon-starfish';
+import { StripeBridge } from '@drakkar.software/doubloon-bridge-stripe';
 
 const PRODUCTS = [
   { slug: 'pro-monthly', name: 'Pro Monthly', defaultDuration: 2592000 },
@@ -97,7 +97,7 @@ if (check.entitled) {
 
 ## Starfish Destination
 
-[Starfish](https://github.com/Drakkar-Software/Starfish) is a document-sync server. `@doubloon/starfish` stores entitlements as a per-user JSON document:
+[Starfish](https://github.com/Drakkar-Software/Starfish) is a document-sync server. `@drakkar.software/doubloon-starfish` stores entitlements as a per-user JSON document:
 
 ```json
 { "features": ["pro-monthly", "lifetime"] }
@@ -111,7 +111,7 @@ Every write is a pull-modify-push cycle:
 2. **Signer** — pushes the transaction. If the document changed (409 Conflict), `mintWithRetry` automatically re-runs the full cycle
 
 ```typescript
-import { createStarfishDestination } from '@doubloon/starfish';
+import { createStarfishDestination } from '@drakkar.software/doubloon-starfish';
 
 const dest = createStarfishDestination({
   client: starfishClient,
@@ -148,15 +148,15 @@ if (features.includes('pro-monthly')) {
 
 ## Anchor Destination
 
-`@doubloon/anchor` stores entitlements as rows in a Supabase table with full metadata — expiry, source, revocation. The schema is compatible with [`@drakkar.software/anchor`](https://github.com/Drakkar-Software/Anchor) so client-side Anchor stores can read the same table directly.
+`@drakkar.software/doubloon-anchor` stores entitlements as rows in a Supabase table with full metadata — expiry, source, revocation. The schema is compatible with [`@drakkar.software/anchor`](https://github.com/Drakkar-Software/Anchor) so client-side Anchor stores can read the same table directly.
 
 ```bash
-pnpm add @doubloon/anchor @supabase/supabase-js
+pnpm add @drakkar.software/doubloon-anchor @supabase/supabase-js
 ```
 
 ```typescript
 import { createClient } from '@supabase/supabase-js';
-import { createAnchorDestination } from '@doubloon/anchor';
+import { createAnchorDestination } from '@drakkar.software/doubloon-anchor';
 
 const supabase = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_SERVICE_KEY!);
 
@@ -234,7 +234,7 @@ const hasPro = rows.some((r) => r.slug === 'pro-monthly' && r.active);
 Declarative wiring of products, destination, and bridges.
 
 ```typescript
-import { defineConfig, createServer } from '@doubloon/server';
+import { defineConfig, createServer } from '@drakkar.software/doubloon-server';
 
 const { serverConfig, registry } = defineConfig({
   products: PRODUCTS,
@@ -259,7 +259,7 @@ const { serverConfig, registry } = defineConfig({
 One server for multiple independent apps.
 
 ```typescript
-import { createNamespacedServer } from '@doubloon/server';
+import { createNamespacedServer } from '@drakkar.software/doubloon-server';
 
 const ns = createNamespacedServer({
   namespaces: {
@@ -336,7 +336,7 @@ Store sends webhook
 Any object satisfying `DestinationLike` (alias for `Destination`) works:
 
 ```typescript
-import type { Destination } from '@doubloon/server';
+import type { Destination } from '@drakkar.software/doubloon-server';
 
 const myDest: Destination = {
   reader: {
@@ -361,8 +361,8 @@ const myDest: Destination = {
 Any payment source can be added by implementing the `Bridge` interface and registering it under an arbitrary key in `bridges`. Route requests to it by setting the `x-doubloon-bridge` header.
 
 ```typescript
-import type { Bridge } from '@doubloon/server';
-import type { StoreNotification, MintInstruction } from '@doubloon/core';
+import type { Bridge } from '@drakkar.software/doubloon-server';
+import type { StoreNotification, MintInstruction } from '@drakkar.software/doubloon-core';
 
 const myBridge: Bridge = {
   async handleNotification(headers, body) {

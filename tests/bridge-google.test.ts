@@ -4,8 +4,8 @@
  * acknowledgment logic, autoRenew computation, instruction routing.
  */
 import { describe, it, expect, vi } from 'vitest';
-import { GoogleBridge, mapGoogleNotificationType, computeGoogleDeduplicationKey } from '@doubloon/bridge-google';
-import { DoubloonError } from '@doubloon/core';
+import { GoogleBridge, mapGoogleNotificationType, computeGoogleDeduplicationKey } from '@drakkar.software/doubloon-bridge-google';
+import { DoubloonError } from '@drakkar.software/doubloon-core';
 
 function makeGoogleBridge(overrides?: {
   resolveProductId?: (store: string, sku: string) => Promise<string | null>;

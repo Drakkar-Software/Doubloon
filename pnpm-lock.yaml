@@ -8,28 +8,28 @@ importers:
 
   .:
     devDependencies:
-      '@doubloon/anchor':
+      '@drakkar.software/doubloon-anchor':
         specifier: workspace:*
         version: link:packages/destinations/anchor
-      '@doubloon/bridge-apple':
+      '@drakkar.software/doubloon-bridge-apple':
         specifier: workspace:*
         version: link:packages/bridges/apple
-      '@doubloon/bridge-google':
+      '@drakkar.software/doubloon-bridge-google':
         specifier: workspace:*
         version: link:packages/bridges/google
-      '@doubloon/bridge-stripe':
+      '@drakkar.software/doubloon-bridge-stripe':
         specifier: workspace:*
         version: link:packages/bridges/stripe
-      '@doubloon/bridge-x402':
+      '@drakkar.software/doubloon-bridge-x402':
         specifier: workspace:*
         version: link:packages/bridges/x402
-      '@doubloon/core':
+      '@drakkar.software/doubloon-core':
         specifier: workspace:*
         version: link:packages/core
-      '@doubloon/server':
+      '@drakkar.software/doubloon-server':
         specifier: workspace:*
         version: link:packages/server
-      '@doubloon/starfish':
+      '@drakkar.software/doubloon-starfish':
         specifier: workspace:*
         version: link:packages/destinations/starfish
       '@drakkar.software/starfish-client':
@@ -126,7 +126,7 @@ importers:
 
   packages/bridges/apple:
     dependencies:
-      '@doubloon/core':
+      '@drakkar.software/doubloon-core':
         specifier: workspace:*
         version: link:../../core
     devDependencies:
@@ -145,7 +145,7 @@ importers:
 
   packages/bridges/google:
     dependencies:
-      '@doubloon/core':
+      '@drakkar.software/doubloon-core':
         specifier: workspace:*
         version: link:../../core
     devDependencies:
@@ -164,7 +164,7 @@ importers:
 
   packages/bridges/stripe:
     dependencies:
-      '@doubloon/core':
+      '@drakkar.software/doubloon-core':
         specifier: workspace:*
         version: link:../../core
     devDependencies:
@@ -183,7 +183,7 @@ importers:
 
   packages/bridges/x402:
     dependencies:
-      '@doubloon/core':
+      '@drakkar.software/doubloon-core':
         specifier: workspace:*
         version: link:../../core
     devDependencies:
@@ -211,7 +211,7 @@ importers:
 
   packages/destinations/anchor:
     dependencies:
-      '@doubloon/core':
+      '@drakkar.software/doubloon-core':
         specifier: workspace:*
         version: link:../../core
     devDependencies:
@@ -230,7 +230,7 @@ importers:
 
   packages/destinations/starfish:
     dependencies:
-      '@doubloon/core':
+      '@drakkar.software/doubloon-core':
         specifier: workspace:*
         version: link:../../core
     devDependencies:
@@ -249,22 +249,22 @@ importers:
 
   packages/server:
     dependencies:
-      '@doubloon/bridge-apple':
+      '@drakkar.software/doubloon-bridge-apple':
         specifier: workspace:*
         version: link:../bridges/apple
-      '@doubloon/bridge-google':
+      '@drakkar.software/doubloon-bridge-google':
         specifier: workspace:*
         version: link:../bridges/google
-      '@doubloon/bridge-stripe':
+      '@drakkar.software/doubloon-bridge-stripe':
         specifier: workspace:*
         version: link:../bridges/stripe
-      '@doubloon/bridge-x402':
+      '@drakkar.software/doubloon-bridge-x402':
         specifier: workspace:*
         version: link:../bridges/x402
-      '@doubloon/core':
+      '@drakkar.software/doubloon-core':
         specifier: workspace:*
         version: link:../core
-      '@doubloon/starfish':
+      '@drakkar.software/doubloon-starfish':
         specifier: workspace:*
         version: link:../destinations/starfish
     devDependencies:

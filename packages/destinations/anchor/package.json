@@ -1,5 +1,5 @@
 {
-  "name": "@doubloon/anchor",
+  "name": "@drakkar.software/doubloon-anchor",
   "version": "0.2.0",
   "description": "Supabase entitlement destination for Doubloon — stores entitlements as rows with full metadata (expiry, source, revocation)",
   "type": "module",
@@ -18,7 +18,7 @@
     "lint": "eslint src/"
   },
   "dependencies": {
-    "@doubloon/core": "workspace:*"
+    "@drakkar.software/doubloon-core": "workspace:*"
   },
   "peerDependencies": {
     "@supabase/supabase-js": ">=2.0.0"

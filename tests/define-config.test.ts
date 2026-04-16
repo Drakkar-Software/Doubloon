@@ -3,8 +3,8 @@
  */
 
 import { describe, it, expect, vi } from 'vitest';
-import { defineConfig } from '@doubloon/server';
-import { createServer } from '@doubloon/server';
+import { defineConfig } from '@drakkar.software/doubloon-server';
+import { createServer } from '@drakkar.software/doubloon-server';
 
 const PRODUCTS = [
   { slug: 'pro-monthly', name: 'Pro Monthly', defaultDuration: 2592000 },

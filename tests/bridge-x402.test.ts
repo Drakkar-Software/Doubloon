@@ -3,8 +3,8 @@
  * middleware behavior (402 response, base64 decoding, error handling).
  */
 import { describe, it, expect, vi } from 'vitest';
-import { X402Bridge, createX402Middleware, mapX402PaymentType, computeX402DeduplicationKey } from '@doubloon/bridge-x402';
-import { DoubloonError } from '@doubloon/core';
+import { X402Bridge, createX402Middleware, mapX402PaymentType, computeX402DeduplicationKey } from '@drakkar.software/doubloon-bridge-x402';
+import { DoubloonError } from '@drakkar.software/doubloon-core';
 
 function makeX402Bridge(overrides?: {
   resolveProductId?: (store: string, sku: string) => Promise<string | null>;

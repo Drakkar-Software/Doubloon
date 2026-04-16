@@ -1,4 +1,4 @@
-import type { EntitlementCheck } from '@doubloon/core';
+import type { EntitlementCheck } from '@drakkar.software/doubloon-core';
 import { MemoryDedupStore } from './dedup.js';
 import type { DedupStore } from './dedup.js';
 import type { RateLimiterConfig } from './rate-limiter.js';
@@ -7,7 +7,7 @@ import type { ServerConfig } from './server.js';
 import { defineConfig } from './define-config.js';
 import type { DoubloonProductConfig, DestinationLike } from './define-config.js';
 import type { MintRetryOpts } from './mint-retry.js';
-import type { Logger } from '@doubloon/core';
+import type { Logger } from '@drakkar.software/doubloon-core';
 
 const RESERVED_NAMES = new Set(['webhook', 'check', 'health', 'products', 'entitlements', 'batch']);
 

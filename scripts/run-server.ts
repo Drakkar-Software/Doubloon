@@ -14,11 +14,11 @@
  *   GET  /health               — Health check
  */
 import http from 'node:http';
-import { createServer as createDoubloonServer } from '@doubloon/server';
-import { createStarfishDestination } from '@doubloon/starfish';
+import { createServer as createDoubloonServer } from '@drakkar.software/doubloon-server';
+import { createStarfishDestination } from '@drakkar.software/doubloon-starfish';
 import { StarfishClient } from '@drakkar.software/starfish-client';
-import { deriveProductIdHex } from '@doubloon/core';
-import type { Logger, MintInstruction, StoreNotification } from '@doubloon/core';
+import { deriveProductIdHex } from '@drakkar.software/doubloon-core';
+import type { Logger, MintInstruction, StoreNotification } from '@drakkar.software/doubloon-core';
 
 const PORT = parseInt(process.env.PORT ?? '3210', 10);
 const STARFISH_URL = process.env.STARFISH_URL ?? 'http://localhost:3000';

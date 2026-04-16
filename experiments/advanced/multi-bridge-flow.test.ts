@@ -8,9 +8,9 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { createServer } from '@doubloon/server';
-import { deriveProductIdHex } from '@doubloon/core';
-import type { MintInstruction, StoreNotification } from '@doubloon/core';
+import { createServer } from '@drakkar.software/doubloon-server';
+import { deriveProductIdHex } from '@drakkar.software/doubloon-core';
+import type { MintInstruction, StoreNotification } from '@drakkar.software/doubloon-core';
 
 function makeMockChain() {
   return {

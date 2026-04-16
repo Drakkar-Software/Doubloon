@@ -1,5 +1,5 @@
 {
-  "name": "@doubloon/bridge-stripe",
+  "name": "@drakkar.software/doubloon-bridge-stripe",
   "version": "0.2.0",
   "type": "module",
   "exports": {
@@ -19,7 +19,7 @@
     "lint": "eslint src/"
   },
   "dependencies": {
-    "@doubloon/core": "workspace:*"
+    "@drakkar.software/doubloon-core": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",

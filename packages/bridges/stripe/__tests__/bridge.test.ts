@@ -1,8 +1,8 @@
 import { describe, it, expect, vi } from 'vitest';
 import Stripe from 'stripe';
 import { StripeBridge } from '../src/bridge.js';
-import type { StoreProductResolver } from '@doubloon/storage';
-import type { WalletResolver } from '@doubloon/core';
+import type { StoreProductResolver } from '@drakkar.software/doubloon-storage';
+import type { WalletResolver } from '@drakkar.software/doubloon-core';
 
 const TEST_WEBHOOK_SECRET = 'whsec_test_secret_for_unit_tests';
 

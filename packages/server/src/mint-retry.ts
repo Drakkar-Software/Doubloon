@@ -1,5 +1,5 @@
-import { DoubloonError } from '@doubloon/core';
-import type { MintInstruction, ChainWriter, ChainSigner } from '@doubloon/core';
+import { DoubloonError } from '@drakkar.software/doubloon-core';
+import type { MintInstruction, ChainWriter, ChainSigner } from '@drakkar.software/doubloon-core';
 
 export type { ChainWriter, ChainSigner };
 

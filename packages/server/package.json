@@ -1,5 +1,5 @@
 {
-  "name": "@doubloon/server",
+  "name": "@drakkar.software/doubloon-server",
   "version": "0.2.0",
   "type": "module",
   "exports": {
@@ -17,7 +17,7 @@
     "lint": "eslint src/"
   },
   "dependencies": {
-    "@doubloon/core": "workspace:*"
+    "@drakkar.software/doubloon-core": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",
@@ -25,17 +25,17 @@
     "vitest": "^2.1.0"
   },
   "peerDependencies": {
-    "@doubloon/starfish": "workspace:*",
-    "@doubloon/bridge-apple": "workspace:*",
-    "@doubloon/bridge-google": "workspace:*",
-    "@doubloon/bridge-stripe": "workspace:*",
-    "@doubloon/bridge-x402": "workspace:*"
+    "@drakkar.software/doubloon-starfish": "workspace:*",
+    "@drakkar.software/doubloon-bridge-apple": "workspace:*",
+    "@drakkar.software/doubloon-bridge-google": "workspace:*",
+    "@drakkar.software/doubloon-bridge-stripe": "workspace:*",
+    "@drakkar.software/doubloon-bridge-x402": "workspace:*"
   },
   "peerDependenciesMeta": {
-    "@doubloon/starfish": { "optional": true },
-    "@doubloon/bridge-apple": { "optional": true },
-    "@doubloon/bridge-google": { "optional": true },
-    "@doubloon/bridge-stripe": { "optional": true },
-    "@doubloon/bridge-x402": { "optional": true }
+    "@drakkar.software/doubloon-starfish": { "optional": true },
+    "@drakkar.software/doubloon-bridge-apple": { "optional": true },
+    "@drakkar.software/doubloon-bridge-google": { "optional": true },
+    "@drakkar.software/doubloon-bridge-stripe": { "optional": true },
+    "@drakkar.software/doubloon-bridge-x402": { "optional": true }
   }
 }

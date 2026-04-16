@@ -23,11 +23,11 @@ export default defineConfig({
   },
   resolve: {
     alias: {
-      '@doubloon/core': path.resolve(__dirname, '../../packages/core/src'),
-      '@doubloon/server': path.resolve(__dirname, '../../packages/server/src'),
-      '@doubloon/bridge-apple': path.resolve(__dirname, '../../packages/bridges/apple/src'),
-      '@doubloon/bridge-google': path.resolve(__dirname, '../../packages/bridges/google/src'),
-      '@doubloon/bridge-stripe': path.resolve(__dirname, '../../packages/bridges/stripe/src'),
+      '@drakkar.software/doubloon-core': path.resolve(__dirname, '../../packages/core/src'),
+      '@drakkar.software/doubloon-server': path.resolve(__dirname, '../../packages/server/src'),
+      '@drakkar.software/doubloon-bridge-apple': path.resolve(__dirname, '../../packages/bridges/apple/src'),
+      '@drakkar.software/doubloon-bridge-google': path.resolve(__dirname, '../../packages/bridges/google/src'),
+      '@drakkar.software/doubloon-bridge-stripe': path.resolve(__dirname, '../../packages/bridges/stripe/src'),
     },
   },
 });

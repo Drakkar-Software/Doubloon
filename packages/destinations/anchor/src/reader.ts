@@ -6,8 +6,8 @@ import type {
   EntitlementSource,
   Logger,
   Product,
-} from '@doubloon/core';
-import { checkEntitlement, checkEntitlements, DoubloonError, nullLogger } from '@doubloon/core';
+} from '@drakkar.software/doubloon-core';
+import { checkEntitlement, checkEntitlements, DoubloonError, nullLogger } from '@drakkar.software/doubloon-core';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { ProductRegistry } from './product-registry.js';
 import type { EntitlementRow } from './types.js';

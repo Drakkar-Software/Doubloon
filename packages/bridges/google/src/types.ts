@@ -1,4 +1,4 @@
-import type { StoreNotification, MintInstruction, RevokeInstruction } from '@doubloon/core';
+import type { StoreNotification, MintInstruction, RevokeInstruction } from '@drakkar.software/doubloon-core';
 
 export interface BridgeResult {
   notification: StoreNotification;
@@ -13,6 +13,6 @@ export interface GoogleBridgeConfig {
   /** Environment override. Defaults to 'production'. Test notifications always use 'sandbox'. */
   environment?: 'production' | 'sandbox';
   productResolver: { resolveProductId(store: string, storeSku: string): Promise<string | null> };
-  walletResolver: import('@doubloon/core').WalletResolver;
-  logger?: import('@doubloon/core').Logger;
+  walletResolver: import('@drakkar.software/doubloon-core').WalletResolver;
+  logger?: import('@drakkar.software/doubloon-core').Logger;
 }

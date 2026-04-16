@@ -1,4 +1,4 @@
-import type { Logger, Destination } from '@doubloon/core';
+import type { Logger, Destination } from '@drakkar.software/doubloon-core';
 import type { StarfishClient } from '@drakkar.software/starfish-client';
 import { createProductRegistry } from './product-registry.js';
 import type { ProductRegistry } from './product-registry.js';

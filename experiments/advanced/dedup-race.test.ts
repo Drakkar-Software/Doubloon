@@ -8,7 +8,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { MemoryDedupStore } from '@doubloon/server';
+import { MemoryDedupStore } from '@drakkar.software/doubloon-server';
 
 describe('Dedup Race Condition Stress Test', () => {
   it('should handle 100 concurrent requests with same key atomically via checkAndMark', async () => {

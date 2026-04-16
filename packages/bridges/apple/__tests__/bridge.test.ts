@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { AppleBridge } from '../src/bridge.js';
-import type { StoreProductResolver } from '@doubloon/storage';
-import type { WalletResolver } from '@doubloon/core';
+import type { StoreProductResolver } from '@drakkar.software/doubloon-storage';
+import type { WalletResolver } from '@drakkar.software/doubloon-core';
 
 function makeMockResolver(): StoreProductResolver {
   return {

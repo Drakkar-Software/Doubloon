@@ -4,8 +4,8 @@
  */
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { createNamespacedServer, MemoryDedupStore } from '@doubloon/server';
-import { deriveProductIdHex } from '@doubloon/core';
+import { createNamespacedServer, MemoryDedupStore } from '@drakkar.software/doubloon-server';
+import { deriveProductIdHex } from '@drakkar.software/doubloon-core';
 
 const onMintFailure = vi.fn(async () => {});
 

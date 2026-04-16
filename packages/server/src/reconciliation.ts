@@ -1,5 +1,5 @@
-import type { Logger, MintInstruction, RevokeInstruction, Entitlement } from '@doubloon/core';
-import { nullLogger, isMintInstruction } from '@doubloon/core';
+import type { Logger, MintInstruction, RevokeInstruction, Entitlement } from '@drakkar.software/doubloon-core';
+import { nullLogger, isMintInstruction } from '@drakkar.software/doubloon-core';
 import type { ChainWriter, ChainSigner, MintRetryOpts } from './mint-retry.js';
 import { mintWithRetry } from './mint-retry.js';
 

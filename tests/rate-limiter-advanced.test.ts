@@ -3,7 +3,7 @@
  * custom key extractors, memory store cleanup.
  */
 import { describe, it, expect, vi } from 'vitest';
-import { createRateLimiter, MemoryRateLimiterStore } from '@doubloon/server';
+import { createRateLimiter, MemoryRateLimiterStore } from '@drakkar.software/doubloon-server';
 
 describe('Rate limiter IP extraction', () => {
   it('x-forwarded-for with single IP', async () => {

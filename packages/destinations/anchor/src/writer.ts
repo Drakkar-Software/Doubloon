@@ -1,5 +1,5 @@
-import type { MintInstruction, RevokeInstruction, Logger } from '@doubloon/core';
-import { nullLogger } from '@doubloon/core';
+import type { MintInstruction, RevokeInstruction, Logger } from '@drakkar.software/doubloon-core';
+import { nullLogger } from '@drakkar.software/doubloon-core';
 import type { ProductRegistry } from './product-registry.js';
 import type { AnchorTransaction } from './types.js';
 
