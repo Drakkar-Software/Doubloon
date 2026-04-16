@@ -11,14 +11,14 @@
 </p>
 
 <p align="center">
-  Doubloon bridges app store purchases, subscription billing, and open payment protocols to your entitlement backend. One integration handles Apple, Google, Stripe, and HTTP 402 — writing entitlements to a <a href="https://github.com/Drakkar-Software/Starfish">Starfish</a> document store that your app can check in milliseconds.
+  Doubloon bridges app store purchases, subscription billing, and open payment protocols to your entitlement backend. One integration handles Apple, Google, Stripe, and HTTP 402 — writing entitlements to <a href="https://github.com/Drakkar-Software/Starfish">Starfish</a> or Supabase, whichever your app already uses.
 </p>
 
 ```
 Apple App Store ──┐
-Google Play ──────┤                  ┌─── Starfish
-Stripe Billing ───┼── Doubloon ──────┤   (document sync)
-HTTP 402 (x402) ──┤   Server         └─── (custom destination)
+Google Play ──────┤                  ┌─── Starfish  (document sync)
+Stripe Billing ───┼── Doubloon ──────┼─── Supabase  (Anchor-compatible rows)
+HTTP 402 (x402) ──┤   Server         └─── custom destination
 Custom Store ─────┘
 ```
 
@@ -206,6 +206,9 @@ CREATE TABLE entitlements (
   revoked_by  TEXT,
   UNIQUE (product_id, user_wallet)
 );
+
+CREATE INDEX idx_entitlements_wallet  ON entitlements (user_wallet);
+CREATE INDEX idx_entitlements_product ON entitlements (product_id);
 ```
 
 ### Client-side reads with Anchor
@@ -321,7 +324,7 @@ Store sends webhook
   processInstruction()
     - beforeMint hook    — Optional gate (return false to reject)
     - mintWithRetry()    — Writer.mintEntitlement + Signer.signAndSend
-                           (Starfish: retries full pull-push on OCC 409)
+                           (Starfish: retries on OCC 409; Anchor: no retry needed)
     - afterMint hook     — Post-processing (analytics, notifications)
        |
        v
@@ -453,7 +456,7 @@ curl -X POST https://your-server/webhook \
 pnpm install
 pnpm build
 pnpm test        # per-package unit tests
-pnpm test:e2e    # root integration tests (9 suites)
+pnpm test:e2e    # root integration tests (10 suites)
 
 # Dev server (requires a running Starfish instance)
 STARFISH_URL=http://localhost:3000 STARFISH_SIGNER_KEY=dev-key pnpm dev
