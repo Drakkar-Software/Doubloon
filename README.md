@@ -179,7 +179,7 @@ if (check.entitled) {
 
 ## Starfish Destination
 
-[Starfish](https://github.com/Drakkar-Software/satellite) is a document-sync server. The `@doubloon/starfish` package stores entitlements as a per-user JSON document:
+[Starfish](https://github.com/Drakkar-Software/Starfish) is a document-sync server. The `@doubloon/starfish` package stores entitlements as a per-user JSON document:
 
 ```json
 { "features": ["pro-monthly", "lifetime"] }
