@@ -1,4 +1,4 @@
-import type { Logger, Destination } from '@doubloon/core';
+import type { Logger, Destination, Bridge } from '@doubloon/core';
 import { DoubloonError } from '@doubloon/core';
 import { createProductRegistry } from '@doubloon/core';
 import type { ProductRegistry } from '@doubloon/core';
@@ -7,7 +7,7 @@ import type { MintRetryOpts } from './mint-retry.js';
 import type { DedupStore } from './dedup.js';
 import type { RateLimiterConfig } from './rate-limiter.js';
 
-export type { ProductRegistry, Destination };
+export type { ProductRegistry, Destination, Bridge };
 
 export interface DoubloonProductConfig {
   slug: string;

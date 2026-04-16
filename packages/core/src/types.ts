@@ -290,6 +290,27 @@ export interface Destination {
 }
 
 /**
+ * Payment store bridge. Parses and verifies incoming store notifications,
+ * then returns a normalized instruction for the entitlement engine.
+ *
+ * Implement this interface to add a custom payment source beyond the built-in
+ * Apple, Google, Stripe, and x402 bridges.
+ *
+ * Route requests to your bridge by setting the `x-doubloon-bridge` header
+ * to the key you registered in `bridges`.
+ */
+export interface Bridge {
+  handleNotification(
+    headers: Record<string, string>,
+    body: Buffer,
+  ): Promise<{
+    notification: StoreNotification;
+    instruction: MintInstruction | RevokeInstruction | null;
+    requiresAcknowledgment?: boolean;
+  }>;
+}
+
+/**
  * Off-chain product metadata JSON structure.
  */
 export interface ProductMetadata {

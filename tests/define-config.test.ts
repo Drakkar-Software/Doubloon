@@ -163,3 +163,80 @@ describe('webhook secret verification', () => {
     expect(res.status).not.toBe(401);
   });
 });
+
+describe('custom bridge', () => {
+  function makeNotification(store: string) {
+    return {
+      id: 'notif-1',
+      type: 'initial_purchase' as const,
+      store: store as any,
+      environment: 'production' as const,
+      productId: 'pid-1',
+      userWallet: 'wallet-1',
+      originalTransactionId: 'txn-1',
+      expiresAt: null,
+      autoRenew: false,
+      storeTimestamp: new Date(),
+      receivedTimestamp: new Date(),
+      deduplicationKey: `${store}:notif-1`,
+      raw: {},
+    };
+  }
+
+  function makeCustomServer(bridgeName: string) {
+    const bridge = {
+      handleNotification: vi.fn().mockResolvedValue({
+        notification: makeNotification(bridgeName),
+        instruction: null,
+      }),
+    };
+    const { serverConfig } = defineConfig({
+      products: PRODUCTS,
+      destination: makeMockDestination(),
+      bridges: { [bridgeName]: bridge },
+      onMintFailure: noop,
+    });
+    return { server: createServer(serverConfig), bridge };
+  }
+
+  it('routes to custom bridge via x-doubloon-bridge header', async () => {
+    const { server, bridge } = makeCustomServer('coinbase');
+    const res = await server.handleWebhook({
+      headers: { 'x-doubloon-bridge': 'coinbase' },
+      body: Buffer.from('{}'),
+    });
+    expect(res.status).toBe(200);
+    expect(bridge.handleNotification).toHaveBeenCalledOnce();
+  });
+
+  it('returns 404 when custom bridge key not registered', async () => {
+    const { server } = makeCustomServer('coinbase');
+    const res = await server.handleWebhook({
+      headers: { 'x-doubloon-bridge': 'unknown-store' },
+      body: Buffer.from('{}'),
+    });
+    expect(res.status).toBe(404);
+  });
+
+  it('x-doubloon-bridge overrides auto-detection for built-in stores', async () => {
+    const customStripe = {
+      handleNotification: vi.fn().mockResolvedValue({
+        notification: makeNotification('stripe'),
+        instruction: null,
+      }),
+    };
+    const { serverConfig } = defineConfig({
+      products: PRODUCTS,
+      destination: makeMockDestination(),
+      bridges: { stripe: customStripe },
+      onMintFailure: noop,
+    });
+    const server = createServer(serverConfig);
+    const res = await server.handleWebhook({
+      headers: { 'x-doubloon-bridge': 'stripe' },
+      body: Buffer.from('{}'),
+    });
+    expect(res.status).toBe(200);
+    expect(customStripe.handleNotification).toHaveBeenCalledOnce();
+  });
+});

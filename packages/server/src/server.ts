@@ -5,7 +5,7 @@ import type {
   StoreNotification,
   EntitlementCheck,
   EntitlementCheckBatch,
-  Store,
+  Bridge,
   Logger,
 } from '@doubloon/core';
 import { nullLogger, isMintInstruction, DoubloonError } from '@doubloon/core';
@@ -26,32 +26,17 @@ export interface ServerConfig {
     signer: ChainSigner;
   };
 
+  /**
+   * Payment store bridges. Built-in keys: `apple`, `google`, `stripe`, `x402`.
+   * Any additional key is treated as a custom bridge — route requests to it by
+   * setting the `x-doubloon-bridge` header to the matching key.
+   */
   bridges: {
-    apple?: {
-      handleNotification(headers: Record<string, string>, body: Buffer): Promise<{
-        notification: StoreNotification;
-        instruction: MintInstruction | RevokeInstruction | null;
-      }>;
-    };
-    google?: {
-      handleNotification(headers: Record<string, string>, body: Buffer): Promise<{
-        notification: StoreNotification;
-        instruction: MintInstruction | RevokeInstruction | null;
-        requiresAcknowledgment?: boolean;
-      }>;
-    };
-    stripe?: {
-      handleNotification(headers: Record<string, string>, body: Buffer): Promise<{
-        notification: StoreNotification;
-        instruction: MintInstruction | RevokeInstruction | null;
-      }>;
-    };
-    x402?: {
-      handleNotification(headers: Record<string, string>, body: Buffer): Promise<{
-        notification: StoreNotification;
-        instruction: MintInstruction | RevokeInstruction | null;
-      }>;
-    };
+    apple?: Bridge;
+    google?: Bridge;
+    stripe?: Bridge;
+    x402?: Bridge;
+    [custom: string]: Bridge | undefined;
   };
 
   mintRetry?: MintRetryOpts;
@@ -64,7 +49,7 @@ export interface ServerConfig {
   onMintFailure: (
     instruction: MintInstruction,
     error: Error,
-    context: { store: Store; retryCount: number; willStoreRetry: boolean },
+    context: { store: string; retryCount: number; willStoreRetry: boolean },
   ) => Promise<void>;
 
   /**
@@ -122,13 +107,22 @@ export function createServer(config: ServerConfig) {
     : createRateLimiter(config.rateLimiter ?? undefined);
 
   /**
-   * Detect the store type from request headers and body.
-   * @returns The detected store type, or null if unrecognized.
+   * Detect the store/bridge from request headers and body.
+   *
+   * Checks `x-doubloon-bridge` header first — this allows explicit routing to
+   * any registered bridge (built-in or custom). Falls back to auto-detection
+   * for the known built-in stores.
+   *
+   * @returns The bridge key, or null if unrecognized.
    */
   function detectStore(req: {
     headers: Record<string, string>;
     body: Buffer | string;
-  }): Store | null {
+  }): string | null {
+    // Explicit bridge selection via header (required for custom bridges)
+    const explicit = req.headers['x-doubloon-bridge'];
+    if (explicit) return explicit;
+
     if (req.headers['stripe-signature']) return 'stripe';
 
     const bodyStr = typeof req.body === 'string' ? req.body : req.body.toString('utf-8');
@@ -180,21 +174,13 @@ export function createServer(config: ServerConfig) {
     const store = detectStore(req);
     logger.info('Webhook received', { store });
 
-    switch (store) {
-      case 'apple':
-        return handleStoreWebhook('apple', config.bridges.apple, req);
-      case 'google':
-        return handleStoreWebhook('google', config.bridges.google, req);
-      case 'stripe':
-        return handleStoreWebhook('stripe', config.bridges.stripe, req);
-      default:
-        return { status: 400, body: 'Unknown store' };
-    }
+    if (!store) return { status: 400, body: 'Unknown store' };
+    return handleStoreWebhook(store, config.bridges[store], req);
   }
 
   async function handleStoreWebhook(
-    store: Store,
-    bridge: ServerConfig['bridges'][keyof ServerConfig['bridges']],
+    store: string,
+    bridge: Bridge | undefined,
     req: { headers: Record<string, string>; body: Buffer | string },
   ): Promise<{ status: number; body?: string }> {
     if (!bridge) return { status: 404 };
@@ -263,7 +249,7 @@ export function createServer(config: ServerConfig) {
   async function processInstruction(
     instruction: MintInstruction | RevokeInstruction,
     notification: StoreNotification,
-    store: Store,
+    store: string,
   ): Promise<void> {
     if (isMintInstruction(instruction)) {
       const mint = instruction;

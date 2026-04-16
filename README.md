@@ -248,12 +248,12 @@ Store sends webhook
 
 ### Custom Destination
 
-Any object satisfying `DestinationLike` works:
+Any object satisfying `DestinationLike` (alias for `Destination`) works:
 
 ```typescript
-import type { DestinationLike } from '@doubloon/server';
+import type { Destination } from '@doubloon/server';
 
-const myDest: DestinationLike = {
+const myDest: Destination = {
   reader: {
     async checkEntitlement(productId, user) { /* ... */ },
     async checkEntitlements(productIds, user) { /* ... */ },
@@ -270,6 +270,74 @@ const myDest: DestinationLike = {
   },
 };
 ```
+
+### Custom Bridge
+
+Any payment source can be added by implementing the `Bridge` interface and registering it under an arbitrary key in `bridges`. Route requests to it by setting the `x-doubloon-bridge` header.
+
+```typescript
+import type { Bridge } from '@doubloon/server';
+import type { StoreNotification, MintInstruction } from '@doubloon/core';
+
+const myBridge: Bridge = {
+  async handleNotification(headers, body) {
+    // 1. Verify the payload (signature, HMAC, etc.)
+    const payload = JSON.parse(body.toString());
+    if (!verify(payload, headers['x-my-signature'])) {
+      throw new Error('Invalid signature');
+    }
+
+    // 2. Build a normalized StoreNotification
+    const notification: StoreNotification = {
+      id: payload.eventId,
+      type: 'initial_purchase',
+      store: 'my-store',         // arbitrary store name
+      environment: 'production',
+      productId: resolveProductId(payload.sku),
+      userWallet: payload.userId,
+      originalTransactionId: payload.txId,
+      expiresAt: payload.expiresAt ? new Date(payload.expiresAt) : null,
+      autoRenew: payload.recurring ?? false,
+      storeTimestamp: new Date(payload.createdAt),
+      receivedTimestamp: new Date(),
+      deduplicationKey: `my-store:${payload.eventId}`,
+      raw: payload,
+    };
+
+    // 3. Return a MintInstruction (or RevokeInstruction, or null)
+    const instruction: MintInstruction = {
+      productId: notification.productId,
+      user: notification.userWallet,
+      expiresAt: notification.expiresAt,
+      source: 'my-store' as any,
+      sourceId: payload.txId,
+    };
+
+    return { notification, instruction };
+  },
+};
+
+const { serverConfig } = defineConfig({
+  products,
+  destination: dest,
+  bridges: {
+    stripe,               // built-in
+    'my-store': myBridge, // custom
+  },
+  onMintFailure,
+});
+```
+
+Send webhooks to your custom bridge by including the `x-doubloon-bridge` header:
+
+```bash
+curl -X POST https://your-server/webhook \
+  -H "x-doubloon-bridge: my-store" \
+  -H "x-my-signature: ..." \
+  -d '{ "eventId": "...", ... }'
+```
+
+The `x-doubloon-bridge` header also works for built-in bridges, bypassing auto-detection.
 
 ---
 
@@ -303,7 +371,7 @@ curl -X POST https://your-server/webhook \
 pnpm install
 pnpm build
 pnpm test        # per-package unit tests
-pnpm test:e2e    # root integration tests (161 tests, 9 suites)
+pnpm test:e2e    # root integration tests (9 suites)
 
 # Dev server (requires a running Starfish instance)
 STARFISH_URL=http://localhost:3000 STARFISH_SIGNER_KEY=dev-key pnpm dev
