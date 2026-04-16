@@ -1,6 +1,6 @@
 import type { StoreNotification, MintInstruction, RevokeInstruction, NotificationType, Logger } from '@doubloon/core';
 import { DoubloonError, nullLogger } from '@doubloon/core';
-import type { WalletResolver } from '@doubloon/auth';
+import type { WalletResolver } from '@doubloon/core';
 import { mapAppleNotificationType, computeAppleDeduplicationKey } from './notification-map.js';
 import type { BridgeResult, BridgeReconcileResult, AppleBridgeConfig } from './types.js';
 

@@ -17,8 +17,7 @@
     "lint": "eslint src/"
   },
   "dependencies": {
-    "@doubloon/core": "workspace:*",
-    "@doubloon/auth": "workspace:*"
+    "@doubloon/core": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",

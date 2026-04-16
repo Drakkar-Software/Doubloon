@@ -14,6 +14,7 @@ export type {
   ChainWriter,
   ChainSigner,
   Destination,
+  WalletResolver,
   MintInstruction,
   RevokeInstruction,
   StoreNotification,

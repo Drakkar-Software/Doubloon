@@ -27,10 +27,9 @@ HTTP 402 (x402) ──┘   Server         └─── (custom destination)
 
 | Package | Description |
 |---------|-------------|
-| `@doubloon/core` | Shared types, `ProductRegistry`, error codes, utilities |
+| `@doubloon/core` | Shared types, `ProductRegistry`, `WalletResolver`, error codes, utilities |
 | `@doubloon/server` | Webhook handler, `defineConfig`, `createNamespacedServer`, dedup, rate limiter, reconciliation |
 | `@doubloon/starfish` | Starfish entitlement destination — pull-modify-push with OCC retry |
-| `@doubloon/auth` | SIWS authentication, session tokens |
 | `@doubloon/bridge-apple` | Apple App Store Server Notifications V2 |
 | `@doubloon/bridge-google` | Google Play Real-Time Developer Notifications |
 | `@doubloon/bridge-stripe` | Stripe webhook events with signature verification |
@@ -43,6 +42,7 @@ HTTP 402 (x402) ──┘   Server         └─── (custom destination)
 ```bash
 pnpm add @doubloon/server @doubloon/starfish @doubloon/bridge-stripe
 ```
+
 
 ```typescript
 import { defineConfig, createServer } from '@doubloon/server';
@@ -273,28 +273,26 @@ const myDest: DestinationLike = {
 
 ---
 
-## Authentication
+## Webhook Security
 
-### Sign In With Solana (SIWS)
+Each bridge already performs store-specific signature verification (Stripe HMAC, Apple JWS, Google JWT). For an additional shared-secret layer, set `webhookSecret` in your config:
 
 ```typescript
-import { createSIWSMessage, verifySIWS } from '@doubloon/auth';
-
-const { message, nonce } = createSIWSMessage(
-  { domain: 'app.example.com', statement: 'Sign in to My App' },
-  walletAddress,
-);
-
-const { wallet, expiresAt } = verifySIWS(message, signature, nonce, 'app.example.com');
+const { serverConfig } = defineConfig({
+  products,
+  destination: dest,
+  webhookSecret: process.env.WEBHOOK_SECRET,  // optional shared secret
+  // ...
+});
 ```
 
-### Session Tokens
+When `webhookSecret` is set, every incoming webhook must include the matching value in the `x-doubloon-secret` header. The comparison uses `crypto.timingSafeEqual` to prevent timing attacks. Requests with a missing or wrong header receive `401 Unauthorized`.
 
-```typescript
-import { createSessionToken, verifySessionToken } from '@doubloon/auth';
-
-const token = createSessionToken(walletAddress, serverSecretKey, 60);
-const { wallet, expiresAt } = verifySessionToken(token, serverPublicKey);
+```bash
+# Send a webhook with the secret
+curl -X POST https://your-server/webhook \
+  -H "x-doubloon-secret: $WEBHOOK_SECRET" \
+  -d '...'
 ```
 
 ---
@@ -315,18 +313,18 @@ STARFISH_URL=http://localhost:3000 STARFISH_SIGNER_KEY=dev-key pnpm dev
 
 ```
 packages/
-  core/         — Shared types, ProductRegistry, utilities
-  server/       — Webhook server, defineConfig, namespaced server, dedup, rate limiter
-  starfish/     — Starfish destination (pull-modify-push, OCC retry)
-  auth/         — SIWS, session tokens
+  core/              — Shared types, ProductRegistry, WalletResolver, utilities
+  server/            — Webhook server, defineConfig, namespaced server, dedup, rate limiter
+  destinations/
+    starfish/        — Starfish destination (pull-modify-push, OCC retry)
   bridges/
-    apple/      — Apple App Store bridge
-    google/     — Google Play bridge
-    stripe/     — Stripe bridge
-    x402/       — HTTP 402 bridge
-tests/          — E2E integration tests (161 tests, 9 suites)
+    apple/           — Apple App Store bridge
+    google/          — Google Play bridge
+    stripe/          — Stripe bridge
+    x402/            — HTTP 402 bridge
+tests/               — E2E integration tests (9 suites)
 scripts/
-  run-server.ts — Local dev server (Starfish-backed)
+  run-server.ts      — Local dev server (Starfish-backed)
 ```
 
 ---

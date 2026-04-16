@@ -33,6 +33,11 @@ export interface NamespacedServerConfig {
   dedup?: DedupStore;
   /** Rate limit config applied to each namespace. Defaults to 60 req/min. */
   rateLimiter?: RateLimiterConfig | false;
+  /**
+   * Shared webhook secret applied to all namespaces. When set, every incoming
+   * webhook must include the matching value in the `x-doubloon-secret` header.
+   */
+  webhookSecret?: string;
   logger?: Logger;
 }
 
@@ -118,6 +123,7 @@ export function createNamespacedServer(config: NamespacedServerConfig): Namespac
       mintRetry: ns.mintRetry,
       dedup: sharedDedup,
       rateLimiter: config.rateLimiter,
+      webhookSecret: config.webhookSecret,
       logger: config.logger,
     });
     servers.set(name, createServer(serverConfig));

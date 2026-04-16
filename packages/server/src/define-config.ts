@@ -41,6 +41,11 @@ export interface DoubloonConfig {
   mintRetry?: MintRetryOpts;
   dedup?: DedupStore;
   rateLimiter?: RateLimiterConfig | false;
+  /**
+   * Shared webhook secret. When set, every incoming webhook must include the
+   * matching value in the `x-doubloon-secret` header.
+   */
+  webhookSecret?: string;
   logger?: Logger;
 }
 
@@ -89,6 +94,7 @@ export function defineConfig(config: DoubloonConfig): DoubloonConfigResult {
     mintRetry: config.mintRetry,
     dedup: config.dedup,
     rateLimiter: config.rateLimiter,
+    webhookSecret: config.webhookSecret,
     logger: config.logger,
   };
 

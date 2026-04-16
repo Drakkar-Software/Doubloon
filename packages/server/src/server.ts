@@ -1,3 +1,4 @@
+import { timingSafeEqual } from 'node:crypto';
 import type {
   MintInstruction,
   RevokeInstruction,
@@ -85,6 +86,13 @@ export interface ServerConfig {
    */
   rateLimiter?: RateLimiterConfig | false;
 
+  /**
+   * Shared webhook secret. When set, every incoming webhook must include the
+   * matching value in the `x-doubloon-secret` header. Compared with a
+   * timing-safe equality check to prevent timing attacks.
+   */
+  webhookSecret?: string;
+
   logger?: Logger;
 }
 
@@ -154,6 +162,18 @@ export function createServer(config: ServerConfig) {
       if (!allowed) {
         logger.warn('Rate limited', { ip: req.headers['x-forwarded-for'] ?? req.headers['x-real-ip'] ?? 'unknown' });
         return { status: 429, body: 'Too many requests' };
+      }
+    }
+
+    // Webhook secret verification
+    if (config.webhookSecret) {
+      const provided = req.headers['x-doubloon-secret'] ?? '';
+      const expected = Buffer.from(config.webhookSecret);
+      const actual = Buffer.from(provided);
+      const valid = expected.length === actual.length && timingSafeEqual(expected, actual);
+      if (!valid) {
+        logger.warn('Invalid or missing webhook secret');
+        return { status: 401, body: 'Unauthorized' };
       }
     }
 

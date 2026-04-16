@@ -105,4 +105,61 @@ describe('defineConfig — serverConfig assembly', () => {
 
     expect(serverConfig.afterMint).toBe(afterMint);
   });
+
+  it('passes webhookSecret through to serverConfig', () => {
+    const { serverConfig } = defineConfig({
+      products: PRODUCTS,
+      destination: makeMockDestination(),
+      webhookSecret: 'my-secret',
+      onMintFailure: noop,
+    });
+
+    expect(serverConfig.webhookSecret).toBe('my-secret');
+  });
+});
+
+describe('webhook secret verification', () => {
+  function makeServer(secret?: string) {
+    const { serverConfig } = defineConfig({
+      products: PRODUCTS,
+      destination: makeMockDestination(),
+      webhookSecret: secret,
+      onMintFailure: noop,
+    });
+    return createServer(serverConfig);
+  }
+
+  const stripeBody = Buffer.from(JSON.stringify({ type: 'customer.subscription.created' }));
+
+  it('returns 401 when secret configured but header missing', async () => {
+    const server = makeServer('super-secret');
+    const res = await server.handleWebhook({ headers: {}, body: stripeBody });
+    expect(res.status).toBe(401);
+  });
+
+  it('returns 401 when secret header is wrong', async () => {
+    const server = makeServer('super-secret');
+    const res = await server.handleWebhook({
+      headers: { 'x-doubloon-secret': 'wrong-secret' },
+      body: stripeBody,
+    });
+    expect(res.status).toBe(401);
+  });
+
+  it('passes through when secret matches', async () => {
+    const server = makeServer('super-secret');
+    const res = await server.handleWebhook({
+      headers: { 'x-doubloon-secret': 'super-secret' },
+      body: stripeBody,
+    });
+    // Not 401 — proceeds to store detection (may fail later on bridge logic, but not auth)
+    expect(res.status).not.toBe(401);
+  });
+
+  it('skips check when no secret configured', async () => {
+    const server = makeServer(undefined);
+    const res = await server.handleWebhook({ headers: {}, body: stripeBody });
+    // No secret configured — should not get 401
+    expect(res.status).not.toBe(401);
+  });
 });

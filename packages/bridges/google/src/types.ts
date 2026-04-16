@@ -13,6 +13,6 @@ export interface GoogleBridgeConfig {
   /** Environment override. Defaults to 'production'. Test notifications always use 'sandbox'. */
   environment?: 'production' | 'sandbox';
   productResolver: { resolveProductId(store: string, storeSku: string): Promise<string | null> };
-  walletResolver: import('@doubloon/auth').WalletResolver;
+  walletResolver: import('@doubloon/core').WalletResolver;
   logger?: import('@doubloon/core').Logger;
 }
