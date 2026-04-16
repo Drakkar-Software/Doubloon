@@ -9,20 +9,33 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { createServer } from '@doubloon/server';
-import { createLocalChain } from '@doubloon/chain-local';
 import { deriveProductIdHex } from '@doubloon/core';
 import type { MintInstruction, StoreNotification } from '@doubloon/core';
 
+function makeMockChain() {
+  return {
+    reader: {
+      checkEntitlement: vi.fn().mockResolvedValue({ entitled: false, entitlement: null, reason: 'not_found', expiresAt: null, product: null }),
+      checkEntitlements: vi.fn().mockResolvedValue({ results: {}, user: '', checkedAt: new Date() }),
+      getEntitlement: vi.fn().mockResolvedValue(null),
+      getProduct: vi.fn().mockResolvedValue(null),
+    },
+    writer: {
+      mintEntitlement: vi.fn().mockResolvedValue({}),
+      revokeEntitlement: vi.fn().mockResolvedValue({}),
+    },
+    signer: { signAndSend: vi.fn().mockResolvedValue('mock-sig'), publicKey: 'mock-key' },
+  };
+}
+
 describe('Multi-Bridge Purchase Flow Simulation', () => {
   let server: ReturnType<typeof createServer>;
-  let chain: ReturnType<typeof createLocalChain>;
   const productId = deriveProductIdHex('premium-subscription');
   const userId = '0xAlice';
 
   beforeEach(() => {
-    chain = createLocalChain();
     server = createServer({
-      chain,
+      chain: makeMockChain(),
       bridges: {
         apple: {
           handleNotification: async () => ({
@@ -143,7 +156,7 @@ describe('Multi-Bridge Purchase Flow Simulation', () => {
 
     // Step 3: Google cancels (no instruction)
     server = createServer({
-      chain,
+      chain: makeMockChain(),
       bridges: {
         google: {
           handleNotification: async () => ({
@@ -201,7 +214,7 @@ describe('Multi-Bridge Purchase Flow Simulation', () => {
 
     // Step 4: Stripe resubscribe
     server = createServer({
-      chain,
+      chain: makeMockChain(),
       bridges: {
         stripe: {
           handleNotification: async () => ({
@@ -268,7 +281,7 @@ describe('Multi-Bridge Purchase Flow Simulation', () => {
     const dedupKey = `dedup-same-bridge:${Date.now()}`;
 
     server = createServer({
-      chain,
+      chain: makeMockChain(),
       bridges: {
         stripe: {
           handleNotification: async () => ({
@@ -340,7 +353,7 @@ describe('Multi-Bridge Purchase Flow Simulation', () => {
     const extendedExpiry = new Date(Date.now() + 60 * 86400000); // 60 days
 
     server = createServer({
-      chain,
+      chain: makeMockChain(),
       bridges: {
         apple: {
           handleNotification: async () => ({
@@ -425,7 +438,7 @@ describe('Multi-Bridge Purchase Flow Simulation', () => {
 
       // Recreate server for each iteration with unique dedup keys
       server = createServer({
-        chain,
+        chain: makeMockChain(),
         bridges: {
           apple: {
             handleNotification: async () => ({

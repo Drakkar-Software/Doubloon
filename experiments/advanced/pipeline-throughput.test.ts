@@ -9,9 +9,24 @@
 
 import { describe, it, expect, vi } from 'vitest';
 import { createServer } from '@doubloon/server';
-import { createLocalChain } from '@doubloon/chain-local';
 import { deriveProductIdHex } from '@doubloon/core';
 import type { MintInstruction, StoreNotification } from '@doubloon/core';
+
+function makeMockChain() {
+  return {
+    reader: {
+      checkEntitlement: vi.fn().mockResolvedValue({ entitled: false, entitlement: null, reason: 'not_found', expiresAt: null, product: null }),
+      checkEntitlements: vi.fn().mockResolvedValue({ results: {}, user: '', checkedAt: new Date() }),
+      getEntitlement: vi.fn().mockResolvedValue(null),
+      getProduct: vi.fn().mockResolvedValue(null),
+    },
+    writer: {
+      mintEntitlement: vi.fn().mockResolvedValue({}),
+      revokeEntitlement: vi.fn().mockResolvedValue({}),
+    },
+    signer: { signAndSend: vi.fn().mockResolvedValue('mock-sig'), publicKey: 'mock-key' },
+  };
+}
 
 describe('Server Pipeline Throughput Benchmark', () => {
   const productId = deriveProductIdHex('benchmark-product');
@@ -39,9 +54,8 @@ describe('Server Pipeline Throughput Benchmark', () => {
   }
 
   it('should process 1000 webhooks through the full pipeline and measure latency', async () => {
-    const chain = createLocalChain();
     const server = createServer({
-      chain,
+      chain: makeMockChain(),
       bridges: {
         stripe: {
           handleNotification: async () => ({
@@ -121,9 +135,8 @@ describe('Server Pipeline Throughput Benchmark', () => {
   });
 
   it('should degrade gracefully when processing is rate-limited at 100 req/min', async () => {
-    const chain = createLocalChain();
     const server = createServer({
-      chain,
+      chain: makeMockChain(),
       bridges: {
         stripe: {
           handleNotification: async () => ({
@@ -213,9 +226,8 @@ describe('Server Pipeline Throughput Benchmark', () => {
   });
 
   it('should measure throughput with tight rate limiting (10 req/min)', async () => {
-    const chain = createLocalChain();
     const server = createServer({
-      chain,
+      chain: makeMockChain(),
       bridges: {
         stripe: {
           handleNotification: async () => ({
@@ -298,9 +310,8 @@ describe('Server Pipeline Throughput Benchmark', () => {
   });
 
   it('should handle concurrent webhooks with proper dedup', async () => {
-    const chain = createLocalChain();
     const server = createServer({
-      chain,
+      chain: makeMockChain(),
       bridges: {
         stripe: {
           handleNotification: async () => ({
@@ -379,9 +390,8 @@ describe('Server Pipeline Throughput Benchmark', () => {
   });
 
   it('should maintain stable latency under sustained load', async () => {
-    const chain = createLocalChain();
     const server = createServer({
-      chain,
+      chain: makeMockChain(),
       bridges: {
         stripe: {
           handleNotification: async () => ({
@@ -478,9 +488,8 @@ describe('Server Pipeline Throughput Benchmark', () => {
   });
 
   it('should handle mixed workload with different bridges', async () => {
-    const chain = createLocalChain();
     const server = createServer({
-      chain,
+      chain: makeMockChain(),
       bridges: {
         stripe: {
           handleNotification: async () => ({

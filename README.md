@@ -18,7 +18,8 @@
 Apple App Store ──┐
 Google Play ──────┤                  ┌─── Starfish
 Stripe Billing ───┼── Doubloon ──────┤   (document sync)
-HTTP 402 (x402) ──┘   Server         └─── (custom destination)
+HTTP 402 (x402) ──┤   Server         └─── (custom destination)
+Custom Store ─────┘
 ```
 
 ---
