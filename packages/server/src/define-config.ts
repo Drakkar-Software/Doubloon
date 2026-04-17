@@ -46,6 +46,12 @@ export interface DoubloonConfig {
    * matching value in the `x-doubloon-secret` header.
    */
   webhookSecret?: string;
+  /**
+   * Environment mode. When set, webhooks with a mismatched `environment` field
+   * are rejected with 400. Use `'production'` to block sandbox events, or
+   * `'sandbox'` to block live events. Omit to accept both.
+   */
+  mode?: 'production' | 'sandbox';
   logger?: Logger;
 }
 
@@ -95,6 +101,7 @@ export function defineConfig(config: DoubloonConfig): DoubloonConfigResult {
     dedup: config.dedup,
     rateLimiter: config.rateLimiter,
     webhookSecret: config.webhookSecret,
+    mode: config.mode,
     logger: config.logger,
   };
 

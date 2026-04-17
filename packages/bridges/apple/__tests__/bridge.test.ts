@@ -117,11 +117,54 @@ describe('AppleBridge', () => {
   it('throws INVALID_RECEIPT for malformed body', async () => {
     const bridge = new AppleBridge({
       bundleId: 'com.app', issuerId: 'i', keyId: 'k', privateKey: 'pk',
-      environment: 'sandbox',
       productResolver: makeMockResolver(),
       walletResolver: makeMockWalletResolver(),
     });
 
     await expect(bridge.handleNotification({}, Buffer.from('not json'))).rejects.toMatchObject({ code: 'INVALID_RECEIPT' });
+  });
+
+  it('config environment field is optional (deprecated)', async () => {
+    // environment is no longer required — derived from signed JWS payload instead
+    const bridge = new AppleBridge({
+      bundleId: 'com.app', issuerId: 'i', keyId: 'k', privateKey: 'pk',
+      productResolver: makeMockResolver(),
+      walletResolver: makeMockWalletResolver(),
+      // no environment field
+    });
+
+    const body = Buffer.from(JSON.stringify({
+      notificationType: 'SUBSCRIBED',
+      transactionInfo: {
+        transactionId: '222', originalTransactionId: '200',
+        productId: 'com.app.pro.monthly',
+        expiresDate: Date.now() + 30 * 86400000,
+        purchaseDate: Date.now(),
+      },
+    }));
+
+    const result = await bridge.handleNotification({}, body);
+    expect(result.notification.environment).toBe('production');
+  });
+
+  it('plain JSON non-JWS notifications default to production environment', async () => {
+    const bridge = new AppleBridge({
+      bundleId: 'com.app', issuerId: 'i', keyId: 'k', privateKey: 'pk',
+      productResolver: makeMockResolver(),
+      walletResolver: makeMockWalletResolver(),
+    });
+
+    const body = Buffer.from(JSON.stringify({
+      notificationType: 'SUBSCRIBED',
+      transactionInfo: {
+        transactionId: '333', originalTransactionId: '300',
+        productId: 'com.app.pro.monthly',
+        expiresDate: Date.now() + 30 * 86400000,
+        purchaseDate: Date.now(),
+      },
+    }));
+
+    const result = await bridge.handleNotification({}, body);
+    expect(result.notification.environment).toBe('production');
   });
 });

@@ -1,6 +1,6 @@
 {
   "name": "@drakkar.software/doubloon-starfish",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Starfish entitlement destination for Doubloon — reads/writes entitlements via the Starfish sync protocol",
   "type": "module",
   "exports": {

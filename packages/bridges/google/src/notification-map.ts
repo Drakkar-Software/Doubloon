@@ -22,6 +22,14 @@ export function mapGoogleNotificationType(rtdnType: number): NotificationType {
   }
 }
 
+export function mapGoogleOneTimeNotificationType(rtdnType: number): NotificationType {
+  switch (rtdnType) {
+    case 1: return 'initial_purchase'; // ONE_TIME_PRODUCT_PURCHASED
+    case 2: return 'cancellation';     // ONE_TIME_PRODUCT_CANCELED
+    default: throw new Error(`Unknown Google one-time product notification type: ${rtdnType}`);
+  }
+}
+
 export function computeGoogleDeduplicationKey(
   type: NotificationType,
   purchaseToken: string,

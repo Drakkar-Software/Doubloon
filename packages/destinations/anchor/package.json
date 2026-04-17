@@ -1,6 +1,6 @@
 {
   "name": "@drakkar.software/doubloon-anchor",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Supabase entitlement destination for Doubloon — stores entitlements as rows with full metadata (expiry, source, revocation)",
   "type": "module",
   "exports": {

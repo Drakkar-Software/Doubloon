@@ -1,6 +1,6 @@
 import type { MintInstruction, RevokeInstruction, StoreNotification } from '@drakkar.software/doubloon-core';
 import { DoubloonError, nullLogger } from '@drakkar.software/doubloon-core';
-import { mapGoogleNotificationType, computeGoogleDeduplicationKey } from './notification-map.js';
+import { mapGoogleNotificationType, mapGoogleOneTimeNotificationType, computeGoogleDeduplicationKey } from './notification-map.js';
 import type { BridgeResult, GoogleBridgeConfig } from './types.js';
 
 /**
@@ -15,6 +15,14 @@ interface GoogleRTDN {
     notificationType: number;
     purchaseToken: string;
     subscriptionId: string;
+    testPurchase?: Record<string, unknown>;
+  };
+  oneTimeProductNotification?: {
+    version: string;
+    notificationType: number;
+    purchaseToken: string;
+    sku: string;
+    testPurchase?: Record<string, unknown>;
   };
   testNotification?: {
     version: string;
@@ -79,51 +87,80 @@ export class GoogleBridge {
     }
 
     const sub = rtdn.subscriptionNotification;
-    if (!sub) {
-      throw new DoubloonError('INVALID_RECEIPT', 'RTDN contains neither subscription nor test notification');
-    }
+    const otp = rtdn.oneTimeProductNotification;
 
-    const notificationType = mapGoogleNotificationType(sub.notificationType);
-    const deduplicationKey = computeGoogleDeduplicationKey(
-      notificationType,
-      sub.purchaseToken,
-      sub.notificationType,
-    );
-
-    // Resolve on-chain product ID from Google subscription ID
-    const productId = await this.config.productResolver.resolveProductId(
-      'google',
-      sub.subscriptionId,
-    );
-    if (!productId) {
-      throw new DoubloonError('PRODUCT_NOT_MAPPED', `Unknown Google subscription ID: ${sub.subscriptionId}`);
-    }
-
-    // Resolve wallet from purchase token (store user identifier)
-    const userWallet = await this.config.walletResolver.resolveWallet(
-      'google',
-      sub.purchaseToken,
-    );
-    if (!userWallet) {
-      throw new DoubloonError('WALLET_NOT_LINKED', `No wallet linked for Google purchase token: ${sub.purchaseToken.substring(0, 8)}...`);
-    }
-    // Validate wallet address format
-    if (!this.isValidWalletAddress(userWallet)) {
-      throw new DoubloonError('WALLET_NOT_LINKED', `Invalid wallet address format: ${userWallet}`);
+    if (!sub && !otp) {
+      throw new DoubloonError('INVALID_RECEIPT', 'RTDN contains neither subscription, one-time product, nor test notification');
     }
 
     const storeTimestamp = new Date(Number(rtdn.eventTimeMillis));
 
+    if (otp) {
+      const notificationType = mapGoogleOneTimeNotificationType(otp.notificationType);
+      const deduplicationKey = computeGoogleDeduplicationKey(notificationType, otp.purchaseToken, otp.notificationType);
+      const environment: 'production' | 'sandbox' = otp.testPurchase != null ? 'sandbox' : (this.config.environment ?? 'production');
+
+      const productId = await this.config.productResolver.resolveProductId('google', otp.sku);
+      if (!productId) {
+        throw new DoubloonError('PRODUCT_NOT_MAPPED', `Unknown Google SKU: ${otp.sku}`);
+      }
+
+      const userWallet = await this.config.walletResolver.resolveWallet('google', otp.purchaseToken);
+      if (!userWallet) {
+        throw new DoubloonError('WALLET_NOT_LINKED', `No wallet linked for Google purchase token: ${otp.purchaseToken.substring(0, 8)}...`);
+      }
+      if (!this.isValidWalletAddress(userWallet)) {
+        throw new DoubloonError('WALLET_NOT_LINKED', `Invalid wallet address format: ${userWallet}`);
+      }
+
+      const notification: StoreNotification = {
+        id: `${otp.purchaseToken}:${otp.notificationType}`,
+        type: notificationType,
+        store: 'google',
+        environment,
+        productId,
+        userWallet,
+        originalTransactionId: otp.purchaseToken,
+        expiresAt: null,
+        autoRenew: false,
+        storeTimestamp,
+        receivedTimestamp: new Date(),
+        deduplicationKey,
+        raw: rtdn,
+      };
+
+      return { notification, instruction: this.buildInstruction(notification), requiresAcknowledgment: notificationType === 'initial_purchase' };
+    }
+
+    const notificationType = mapGoogleNotificationType(sub!.notificationType);
+    const deduplicationKey = computeGoogleDeduplicationKey(notificationType, sub!.purchaseToken, sub!.notificationType);
+    const environment: 'production' | 'sandbox' = sub!.testPurchase != null ? 'sandbox' : (this.config.environment ?? 'production');
+
+    // Resolve on-chain product ID from Google subscription ID
+    const productId = await this.config.productResolver.resolveProductId('google', sub!.subscriptionId);
+    if (!productId) {
+      throw new DoubloonError('PRODUCT_NOT_MAPPED', `Unknown Google subscription ID: ${sub!.subscriptionId}`);
+    }
+
+    // Resolve wallet from purchase token (store user identifier)
+    const userWallet = await this.config.walletResolver.resolveWallet('google', sub!.purchaseToken);
+    if (!userWallet) {
+      throw new DoubloonError('WALLET_NOT_LINKED', `No wallet linked for Google purchase token: ${sub!.purchaseToken.substring(0, 8)}...`);
+    }
+    if (!this.isValidWalletAddress(userWallet)) {
+      throw new DoubloonError('WALLET_NOT_LINKED', `Invalid wallet address format: ${userWallet}`);
+    }
+
     const notification: StoreNotification = {
-      id: `${sub.purchaseToken}:${sub.notificationType}`,
+      id: `${sub!.purchaseToken}:${sub!.notificationType}`,
       type: notificationType,
       store: 'google',
-      environment: this.config.environment ?? 'production',
+      environment,
       productId,
       userWallet,
-      originalTransactionId: sub.purchaseToken,
-      expiresAt: null, // Would be populated by querying the Purchases API
-      autoRenew: ![3, 10, 12, 13].includes(sub.notificationType),
+      originalTransactionId: sub!.purchaseToken,
+      expiresAt: null,
+      autoRenew: ![3, 10, 12, 13].includes(sub!.notificationType),
       storeTimestamp,
       receivedTimestamp: new Date(),
       deduplicationKey,
@@ -132,8 +169,8 @@ export class GoogleBridge {
 
     this.logger.info('Google RTDN processed', {
       type: notificationType,
-      subscriptionId: sub.subscriptionId,
-      notificationType: sub.notificationType,
+      subscriptionId: sub!.subscriptionId,
+      notificationType: sub!.notificationType,
     });
 
     const instruction = this.buildInstruction(notification);

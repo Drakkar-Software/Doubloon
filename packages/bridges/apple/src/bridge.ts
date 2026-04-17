@@ -7,7 +7,6 @@ import type { BridgeResult, BridgeReconcileResult, AppleBridgeConfig } from './t
 export class AppleBridge {
   private productResolver: AppleBridgeConfig['productResolver'];
   private walletResolver: WalletResolver;
-  private environment: 'production' | 'sandbox';
   private bundleId: string;
   private issuerId: string;
   private keyId: string;
@@ -16,7 +15,6 @@ export class AppleBridge {
   private logger: Logger;
 
   constructor(config: AppleBridgeConfig) {
-    this.environment = config.environment;
     this.bundleId = config.bundleId;
     this.issuerId = config.issuerId;
     this.keyId = config.keyId;
@@ -33,17 +31,20 @@ export class AppleBridge {
   ): Promise<BridgeResult> {
     const bodyStr = _body.toString('utf-8');
     let parsed: Record<string, unknown>;
+    let environment: 'production' | 'sandbox';
 
     // Apple Server Notifications V2 sends a JWS (signedPayload).
     // We verify the signature chain before trusting any content.
     if (bodyStr.startsWith('eyJ') || bodyStr.startsWith('{"signedPayload"')) {
       parsed = await this.verifyAndDecodeJWS(bodyStr);
+      environment = AppleBridge.extractEnvironment(parsed);
     } else {
       try {
         parsed = JSON.parse(bodyStr);
       } catch {
         throw new DoubloonError('INVALID_RECEIPT', 'Invalid Apple notification body');
       }
+      environment = 'production';
     }
 
     const notificationType = parsed.notificationType as string;
@@ -58,7 +59,7 @@ export class AppleBridge {
 
     const appleProductId = transactionInfo?.productId as string | undefined;
     if (!appleProductId) {
-      const notification = this.buildEmptyNotification(notificationType, subtype, normalizedType);
+      const notification = this.buildEmptyNotification(notificationType, subtype, normalizedType, environment);
       return { notification, instruction: null };
     }
 
@@ -82,6 +83,7 @@ export class AppleBridge {
       onChainProductId,
       wallet,
       normalizedType,
+      environment,
     );
 
     const instruction = this.mapToInstruction(
@@ -333,17 +335,23 @@ export class AppleBridge {
     }
   }
 
+  private static extractEnvironment(payload: Record<string, unknown>): 'production' | 'sandbox' {
+    const raw = (payload.environment ?? (payload.data as Record<string, unknown> | undefined)?.environment) as string | undefined;
+    return raw?.toLowerCase() === 'sandbox' ? 'sandbox' : 'production';
+  }
+
   private buildNotification(
     tx: Record<string, unknown>,
     productId: string,
     wallet: string,
     type: NotificationType,
+    environment: 'production' | 'sandbox',
   ): StoreNotification {
     return {
       id: String(tx.transactionId ?? ''),
       type,
       store: 'apple',
-      environment: this.environment,
+      environment,
       productId,
       userWallet: wallet,
       originalTransactionId: String(tx.originalTransactionId ?? tx.transactionId ?? ''),
@@ -360,12 +368,13 @@ export class AppleBridge {
     appleType: string,
     subtype: string | undefined,
     normalizedType: NotificationType,
+    environment: 'production' | 'sandbox',
   ): StoreNotification {
     return {
       id: '',
       type: normalizedType,
       store: 'apple',
-      environment: this.environment,
+      environment,
       productId: '',
       userWallet: '',
       originalTransactionId: '',

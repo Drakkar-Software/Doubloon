@@ -78,6 +78,13 @@ export interface ServerConfig {
    */
   webhookSecret?: string;
 
+  /**
+   * Environment mode. When set, webhooks with a mismatched `environment` field
+   * are rejected with 400. Use `'production'` to block sandbox events, or
+   * `'sandbox'` to block live events. Omit to accept both.
+   */
+  mode?: 'production' | 'sandbox';
+
   logger?: Logger;
 }
 
@@ -193,6 +200,16 @@ export function createServer(config: ServerConfig) {
         return { status: 400, body: 'Payload too large' };
       }
       const result = await bridge.handleNotification(req.headers, body);
+
+      // Environment mode enforcement — reject before dedup so mismatched events don't poison the cache
+      if (config.mode && result.notification.environment !== config.mode) {
+        logger.warn('Environment mismatch, rejecting webhook', {
+          expected: config.mode,
+          got: result.notification.environment,
+          store,
+        });
+        return { status: 400, body: `environment mismatch: expected ${config.mode}, got ${result.notification.environment}` };
+      }
 
       // Deduplication (always active)
       // Prefer atomic checkAndMark to avoid race where two concurrent webhooks

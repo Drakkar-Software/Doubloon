@@ -245,6 +245,7 @@ const { serverConfig, registry } = defineConfig({
   },
   onMintFailure: async (instr, err) => alerting.send(err),
   mintRetry: { maxRetries: 5, baseDelayMs: 50, maxDelayMs: 2000 },
+  mode: 'production',         // optional: 'production' | 'sandbox' — rejects mismatched events
 });
 ```
 
@@ -267,10 +268,12 @@ const ns = createNamespacedServer({
       products: prodProducts,
       destination: createStarfishDestination({ client, products: prodProducts, signerKey: 'key' }),
       bridges: { stripe, apple },
+      mode: 'production',   // reject sandbox events in prod namespace
     },
     'app-staging': {
       products: stagingProducts,
       destination: stagingDest,
+      mode: 'sandbox',      // reject live events in staging namespace
     },
   },
   onMintFailure: async (instr, err) => console.error(err),
@@ -293,6 +296,35 @@ app.all('*', async (req, res) => {
 | `GET` | `/{namespace}/health` | Health check |
 
 Namespace names: `a-z A-Z 0-9 _ -`. Reserved: `webhook`, `check`, `health`, `products`, `entitlements`, `batch`.
+
+---
+
+## Sandbox / Test Mode
+
+Each bridge sets `StoreNotification.environment` to `'production'` or `'sandbox'`:
+
+| Bridge | How environment is determined |
+|--------|-------------------------------|
+| **Stripe** | `event.livemode` — accurate for both test and live keys |
+| **Apple** | Decoded from the signed JWS payload (`payload.environment: "Sandbox" \| "Production"`) |
+| **Google** | `testPurchase` field presence on `subscriptionNotification` or `oneTimeProductNotification`; falls back to config default (`'production'`) |
+| **x402** | Always `'production'` |
+
+### Enforcing a mode
+
+Pass `mode` to `defineConfig` to reject events with a mismatched environment (HTTP 400, before deduplication):
+
+```typescript
+const { serverConfig } = defineConfig({
+  products,
+  destination,
+  bridges: { stripe },
+  onMintFailure,
+  mode: 'production',  // reject sandbox/test webhooks
+});
+```
+
+Omit `mode` (default) to accept both environments. Per-namespace `mode` is also supported in `createNamespacedServer`.
 
 ---
 
@@ -456,7 +488,7 @@ curl -X POST https://your-server/webhook \
 pnpm install
 pnpm build
 pnpm test        # per-package unit tests
-pnpm test:e2e    # root integration tests (10 suites)
+pnpm test:e2e    # root integration tests (11 suites)
 
 # Dev server (requires a running Starfish instance)
 STARFISH_URL=http://localhost:3000 STARFISH_SIGNER_KEY=dev-key pnpm dev
@@ -476,7 +508,7 @@ packages/
     google/          — Google Play bridge
     stripe/          — Stripe bridge
     x402/            — HTTP 402 bridge
-tests/               — E2E integration tests (9 suites)
+tests/               — E2E integration tests (11 suites)
 scripts/
   run-server.ts      — Local dev server (Starfish-backed)
 ```

@@ -201,4 +201,91 @@ describe('GoogleBridge', () => {
 
     await expect(bridge.handleNotification(emptyHeaders, toBody(msg))).rejects.toMatchObject({ code: 'INVALID_RECEIPT' });
   });
+
+  it('sets environment=sandbox when subscriptionNotification has testPurchase', async () => {
+    const bridge = new GoogleBridge({
+      packageName: 'com.app',
+      serviceAccountKey: '{}',
+      productResolver: makeMockResolver(),
+      walletResolver: makeMockWalletResolver(),
+    });
+
+    const msg = makeRTDN({
+      subscriptionNotification: {
+        version: '1.0',
+        notificationType: 4,
+        purchaseToken: 'token-test',
+        subscriptionId: 'com.app.pro.monthly',
+        testPurchase: {},
+      },
+    });
+
+    const result = await bridge.handleNotification(emptyHeaders, toBody(msg));
+    expect(result.notification.environment).toBe('sandbox');
+  });
+
+  it('sets environment=production when subscriptionNotification has no testPurchase', async () => {
+    const bridge = new GoogleBridge({
+      packageName: 'com.app',
+      serviceAccountKey: '{}',
+      productResolver: makeMockResolver(),
+      walletResolver: makeMockWalletResolver(),
+    });
+
+    const result = await bridge.handleNotification(emptyHeaders, toBody(makeRTDN()));
+    expect(result.notification.environment).toBe('production');
+  });
+
+  it('handles oneTimeProductNotification (type 1 = purchased)', async () => {
+    const bridge = new GoogleBridge({
+      packageName: 'com.app',
+      serviceAccountKey: '{}',
+      productResolver: makeMockResolver(),
+      walletResolver: makeMockWalletResolver(),
+    });
+
+    const msg = JSON.stringify({
+      version: '1.0',
+      packageName: 'com.app',
+      eventTimeMillis: String(Date.now()),
+      oneTimeProductNotification: {
+        version: '1.0',
+        notificationType: 1, // ONE_TIME_PRODUCT_PURCHASED
+        purchaseToken: 'token-otp',
+        sku: 'com.app.pro.monthly',
+      },
+    });
+
+    const result = await bridge.handleNotification(emptyHeaders, toBody(msg));
+    expect(result.notification.type).toBe('initial_purchase');
+    expect(result.notification.environment).toBe('production');
+    expect(result.instruction).not.toBeNull();
+    expect((result.instruction as any).source).toBe('google');
+  });
+
+  it('handles oneTimeProductNotification with testPurchase → sandbox', async () => {
+    const bridge = new GoogleBridge({
+      packageName: 'com.app',
+      serviceAccountKey: '{}',
+      productResolver: makeMockResolver(),
+      walletResolver: makeMockWalletResolver(),
+    });
+
+    const msg = JSON.stringify({
+      version: '1.0',
+      packageName: 'com.app',
+      eventTimeMillis: String(Date.now()),
+      oneTimeProductNotification: {
+        version: '1.0',
+        notificationType: 1,
+        purchaseToken: 'token-otp-test',
+        sku: 'com.app.pro.monthly',
+        testPurchase: {},
+      },
+    });
+
+    const result = await bridge.handleNotification(emptyHeaders, toBody(msg));
+    expect(result.notification.type).toBe('initial_purchase');
+    expect(result.notification.environment).toBe('sandbox');
+  });
 });

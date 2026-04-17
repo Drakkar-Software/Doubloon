@@ -1,5 +1,34 @@
 # Changelog
 
+## 0.3.0 (2026-04-17)
+
+### Features
+
+- **Sandbox/testnet environment support** — bridges now correctly label `StoreNotification.environment` and the server can enforce an environment mode.
+
+#### Apple (`@drakkar.software/doubloon-bridge-apple`)
+
+- Environment is now derived from the signed JWS payload (`payload.environment`, fallback `data.environment`) instead of a static config flag. This means a sandbox-signed notification is always labelled `sandbox` regardless of server config.
+- `AppleBridgeConfig.environment` is deprecated (kept for backward compatibility, has no effect).
+
+#### Google (`@drakkar.software/doubloon-bridge-google`)
+
+- `subscriptionNotification.testPurchase` presence now sets `environment: 'sandbox'` automatically.
+- `oneTimeProductNotification` is now handled: type 1 → `initial_purchase` (mint), type 2 → `cancellation` (no-op). Supports `testPurchase` detection for sandbox labelling.
+
+#### Server (`@drakkar.software/doubloon-server`)
+
+- New `mode?: 'production' | 'sandbox'` option in `defineConfig` / `ServerConfig`. When set, webhooks with a mismatched `environment` are rejected with HTTP 400 before deduplication. Omit to accept both (backward-compatible default).
+- `NamespaceConfig` gains per-namespace `mode`, so a single namespaced server can host both a production namespace and a staging namespace.
+
+### Tests
+
+- 5 new tests in `tests/server-mode.test.ts` — mode enforcement, namespaced mode, backward compat.
+- 2 new tests in `packages/bridges/apple/__tests__/bridge.test.ts` — deprecated config field, default production env.
+- 4 new tests in `packages/bridges/google/__tests__/bridge.test.ts` — testPurchase sandbox labelling, oneTimeProductNotification (purchased + sandbox).
+
+---
+
 ## 0.2.0 (2026-04-16)
 
 ### New Packages

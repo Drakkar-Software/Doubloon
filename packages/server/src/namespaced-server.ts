@@ -23,6 +23,8 @@ export interface NamespaceConfig {
     onMintFailure?: ServerConfig['onMintFailure'];
   };
   mintRetry?: MintRetryOpts;
+  /** Per-namespace environment mode. Overrides or supplements the global mode. */
+  mode?: 'production' | 'sandbox';
 }
 
 export interface NamespacedServerConfig {
@@ -124,6 +126,7 @@ export function createNamespacedServer(config: NamespacedServerConfig): Namespac
       dedup: sharedDedup,
       rateLimiter: config.rateLimiter,
       webhookSecret: config.webhookSecret,
+      mode: ns.mode,
       logger: config.logger,
     });
     servers.set(name, createServer(serverConfig));
