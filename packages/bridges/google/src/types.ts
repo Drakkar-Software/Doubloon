@@ -14,5 +14,7 @@ export interface GoogleBridgeConfig {
   environment?: 'production' | 'sandbox';
   productResolver: { resolveProductId(store: string, storeSku: string): Promise<string | null> };
   walletResolver: import('@drakkar.software/doubloon-core').WalletResolver;
+  /** Optional custom wallet address validator. Overrides the default Solana/EVM check. */
+  walletValidator?: (address: string) => boolean;
   logger?: import('@drakkar.software/doubloon-core').Logger;
 }

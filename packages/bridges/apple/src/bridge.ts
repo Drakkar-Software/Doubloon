@@ -7,6 +7,7 @@ import type { BridgeResult, BridgeReconcileResult, AppleBridgeConfig } from './t
 export class AppleBridge {
   private productResolver: AppleBridgeConfig['productResolver'];
   private walletResolver: WalletResolver;
+  private walletValidator?: (address: string) => boolean;
   private bundleId: string;
   private issuerId: string;
   private keyId: string;
@@ -22,6 +23,7 @@ export class AppleBridge {
     this.rootCertificates = config.rootCertificates;
     this.productResolver = config.productResolver;
     this.walletResolver = config.walletResolver;
+    this.walletValidator = config.walletValidator;
     this.logger = config.logger ?? nullLogger;
   }
 
@@ -275,16 +277,10 @@ export class AppleBridge {
   }
 
   private isValidWalletAddress(address: string): boolean {
-    // Check if it's a valid Solana address (base58, 32-44 chars) or Ethereum address (42 chars starting with 0x)
     if (!address || typeof address !== 'string') return false;
-    // Solana address: base58, typically 32-44 characters
-    if (/^[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{32,44}$/.test(address)) {
-      return true;
-    }
-    // Ethereum/EVM address: 0x followed by 40 hex characters
-    if (/^0x[0-9a-fA-F]{40}$/.test(address)) {
-      return true;
-    }
+    if (this.walletValidator) return this.walletValidator(address);
+    if (/^[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{32,44}$/.test(address)) return true;
+    if (/^0x[0-9a-fA-F]{40}$/.test(address)) return true;
     return false;
   }
 

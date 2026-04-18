@@ -33,6 +33,8 @@ export function mapAppleNotificationType(
       return 'renewal';
     case 'PRICE_INCREASE':
       return 'price_increase_consent';
+    case 'ONE_TIME_CHARGE':
+      return 'initial_purchase';
     case 'OFFER_REDEEMED':
       return 'offer_redeemed';
     case 'TEST':

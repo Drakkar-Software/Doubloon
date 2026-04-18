@@ -24,6 +24,8 @@ export function mapStripeEventType(
       return 'billing_retry_start';
     case 'charge.refunded':
       return 'refund';
+    case 'checkout.session.completed':
+      return 'initial_purchase';
     default:
       throw new Error(
         `Unknown Stripe event type: "${eventType}". ` +
