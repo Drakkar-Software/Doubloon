@@ -11,7 +11,7 @@
     "clean": "turbo clean",
     "test:e2e": "vitest run --config vitest.e2e.config.ts",
     "dev": "tsx scripts/run-server.ts",
-    "publish:all": "pnpm --filter @drakkar.software/doubloon-core publish --access public && pnpm --filter @drakkar.software/doubloon-server publish --access public && pnpm --filter @drakkar.software/doubloon-starfish publish --access public && pnpm --filter @drakkar.software/doubloon-anchor publish --access public && pnpm --filter @drakkar.software/doubloon-bridge-apple publish --access public && pnpm --filter @drakkar.software/doubloon-bridge-google publish --access public && pnpm --filter @drakkar.software/doubloon-bridge-stripe publish --access public && pnpm --filter @drakkar.software/doubloon-bridge-x402 publish --access public"
+    "publish:all": "pnpm publish -r --filter='./packages/**' --access public"
   },
   "devDependencies": {
     "@drakkar.software/doubloon-anchor": "workspace:*",
