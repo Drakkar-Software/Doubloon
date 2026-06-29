@@ -5,3 +5,8 @@ packages:
   # Starfish packages from sister monorepo (needed by @doubloon/starfish)
   - "../../Drakkar-Software/satellite/packages/ts/client"
   - "../../Drakkar-Software/satellite/packages/ts/protocol"
+  - "../../Drakkar-Software/satellite/packages/ts/entitlements"
+  - "../../Drakkar-Software/satellite/packages/ts/server"
+  - "../../Drakkar-Software/satellite/packages/ts/keyring"
+  - "../../Drakkar-Software/satellite/packages/ts/identities"
+  - "../../Drakkar-Software/satellite/packages/ts/sharing"

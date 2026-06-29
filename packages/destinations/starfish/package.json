@@ -1,6 +1,6 @@
 {
   "name": "@drakkar.software/doubloon-starfish",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "Starfish entitlement destination for Doubloon — reads/writes entitlements via the Starfish sync protocol",
   "type": "module",
   "exports": {
@@ -21,10 +21,12 @@
     "@drakkar.software/doubloon-core": "workspace:*"
   },
   "peerDependencies": {
-    "@drakkar.software/starfish-client": ">=1.0.0"
+    "@drakkar.software/starfish-client": "^3.0.0-alpha.44",
+    "@drakkar.software/starfish-entitlements": "^3.0.0-alpha.44"
   },
   "devDependencies": {
     "@drakkar.software/starfish-client": "workspace:*",
+    "@drakkar.software/starfish-entitlements": "workspace:*",
     "@types/node": "^22.0.0",
     "typescript": "^5.6.0",
     "vitest": "^2.1.0"

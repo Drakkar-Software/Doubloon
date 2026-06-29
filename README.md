@@ -143,10 +143,10 @@ Starfish entitlements have no per-feature expiry — `expiresAt` is always `null
 
 ### Client-side checks
 
-On the client, use `pullEntitlements` from `@drakkar.software/starfish-client` directly:
+On the client, use `pullEntitlements` from `@drakkar.software/starfish-entitlements` directly:
 
 ```typescript
-import { pullEntitlements } from '@drakkar.software/starfish-client';
+import { pullEntitlements } from '@drakkar.software/starfish-entitlements';
 
 const features = await pullEntitlements(starfishClient, userId);
 if (features.includes('pro-monthly')) {

@@ -5,6 +5,13 @@
       "dependsOn": ["^build"],
       "outputs": ["dist/**"]
     },
+    "@drakkar.software/starfish-client#build": { "dependsOn": [], "outputs": ["dist/**"] },
+    "@drakkar.software/starfish-protocol#build": { "dependsOn": [], "outputs": ["dist/**"] },
+    "@drakkar.software/starfish-entitlements#build": { "dependsOn": [], "outputs": ["dist/**"] },
+    "@drakkar.software/starfish-server#build": { "dependsOn": [], "outputs": ["dist/**"] },
+    "@drakkar.software/starfish-keyring#build": { "dependsOn": [], "outputs": ["dist/**"] },
+    "@drakkar.software/starfish-identities#build": { "dependsOn": [], "outputs": ["dist/**"] },
+    "@drakkar.software/starfish-sharing#build": { "dependsOn": [], "outputs": ["dist/**"] },
     "test": {
       "dependsOn": ["build"],
       "outputs": []

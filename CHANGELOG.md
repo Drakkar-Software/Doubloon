@@ -1,5 +1,24 @@
 # Changelog
 
+## 0.4.0 / 0.3.1 (2026-06-29)
+
+### Breaking
+
+#### Starfish (`@drakkar.software/doubloon-starfish`) — `0.3.0` → `0.4.0`
+
+- Bumped to `@drakkar.software/starfish-client` **v3** (workspace-linked `3.0.0-alpha.44`). v3 removed `pullEntitlements` from `starfish-client` and moved it to the new `@drakkar.software/starfish-entitlements` package. The Doubloon starfish destination now imports `pullEntitlements` from there.
+- **New peer dependency:** `@drakkar.software/starfish-entitlements: >=3.0.0-alpha.0` must be installed alongside `@drakkar.software/starfish-client`.
+- Peer range for `starfish-client` tightened to `>=3.0.0-alpha.0` (v3 is now required; `pullEntitlements` does not exist in v1/v2).
+- No changes to the public API of `@drakkar.software/doubloon-starfish` — this version bump is solely due to the new required peer.
+
+### Fixes
+
+#### Anchor (`@drakkar.software/doubloon-anchor`) — `0.3.0` → `0.3.1`
+
+- Bumped `@supabase/supabase-js` dev dependency floor from `^2.49.0` to `^2.108.0` (latest stable `2.108.2`). The peer range `>=2.0.0` is unchanged. No source changes — the API surface used (`.from()`, `.upsert()`, `.update()`, `.select()`, `.eq()`, `.in()`, `.maybeSingle()`, `.single()`, `{ data, error }`) is stable across this minor bump.
+
+---
+
 ## 0.3.1 (2026-04-18)
 
 ### Features
